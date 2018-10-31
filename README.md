@@ -20,27 +20,27 @@ The goal of this project is to develop an algorithm that can produce substantial
 
 ## RESOURCES
 The goal of the project is to provide a new, useful algorithm for video games, and therefore we are targeting consumer-level - CUDA capable hardware. We will use a 3rd party platform to render the output of our algorithm into a terrain mesh. 
-
+
 ## GOALS AND DELIVERABLES
 
 ### Goals
-Render a 1024x1024 heightmap in no more than 5ms per cycle
-Capable of operating on continuously scrolling terrain instead of a fixed heightmap
-Multiple terrain materials with different erosion mechanics
-Persistent rivers/bodies of water
+⋅⋅* Render a 1024x1024 heightmap in no more than 5ms per cycle
+⋅⋅* Capable of operating on continuously scrolling terrain instead of a fixed heightmap
+⋅⋅* Multiple terrain materials with different erosion mechanics
+⋅⋅* Persistent rivers/bodies of water
 
 ### Stretch Goals
 Non-hydraulic erosion methods
 Voxel-based erosion instead of heightmap erosion
 
 ### Deliverables
-Working CUDA code and loading-unloading program
-Documentation in the form of a Report.
+⋅⋅* Working CUDA code and loading-unloading program
+⋅⋅* Documentation in the form of a Report.
 
 ## PLATFORM CHOICE
 We plan to make this project usable for video games and so will be using some ubiquitous NVIDIA hardware that is available to us. The specifics are:
-GeForce® GTX 1080 Ti 
-GeForce® GTX 1050 Ti 
+⋅⋅* GeForce® GTX 1080 Ti 
+⋅⋅* GeForce® GTX 1050 Ti 
 
 ## POSTER SESSION
 Poster demonstrating the algorithm implemented and a live demo on one of our laptops showing the algorithm in process and iteration times. 
