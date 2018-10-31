@@ -47,7 +47,7 @@ Poster demonstrating the algorithm implemented and a live demo on one of our lap
 
 ## SCHEDULE
 | Description   | Date        |
-|---------------|-------------|
+|---------------|:-----------:|
 | Determine algorithms for base heightmap generation, height map rendering environment. | Nov 05, 2018 |
 | Implement basic height map generation algorithm. Design algorithm for hydraulic erosion. | Nov 12, 2018 |
 | Begin implementation of an algorithm for hydraulic erosion. | Nov 19, 2018 |
