@@ -24,10 +24,10 @@ The goal of the project is to provide a new, useful algorithm for video games, a
 ## GOALS AND DELIVERABLES
 
 ### Goals
-⋅⋅* Render a 1024x1024 heightmap in no more than 5ms per cycle
-⋅⋅* Capable of operating on continuously scrolling terrain instead of a fixed heightmap
-⋅⋅* Multiple terrain materials with different erosion mechanics
-⋅⋅* Persistent rivers/bodies of water
+- Render a 1024x1024 heightmap in no more than 5ms per cycle
+- Capable of operating on continuously scrolling terrain instead of a fixed heightmap
+- Multiple terrain materials with different erosion mechanics
+- Persistent rivers/bodies of water
 
 ### Stretch Goals
 Non-hydraulic erosion methods
