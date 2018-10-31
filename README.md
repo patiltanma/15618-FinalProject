@@ -56,10 +56,6 @@ Poster demonstrating the algorithm implemented and a live demo on one of our lap
 | Debug and optimize. Consider creating an interactive demonstration. | Dec 9, 2018 |
 | Write the final report and prepare for the presentation. | Dec 16, 2018 |
 
-| Command | Description |
-| --- | --- |
-| git status | List all new or modified files |
-| git diff | Show file differences that haven't been staged |
 
 
 
