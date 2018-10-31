@@ -2,8 +2,12 @@
 
 We are going to implement a hydraulic erosion model for procedural terrain generation to produce more natural looking landscapes in real time.
 
+---
+
 ## BACKGROUND
 Procedurally generated heightmaps have been used to quickly create large height maps for video game terrain for decades. However, purely procedural techniques ultimately lack the natural qualities present in real landscapes.  A common method for increasing the realism of terrain is to model hydraulic erosion; the simulation of the flow of water removing and transporting surface material. However, modelling erosion accurately requires performing calculations on every cell of the heightmap being eroded for many iterations. This presents a significant bottleneck for CPU programs and a significant opportunity for parallelization with GPU’s.
+
+---
 
 ## CHALLENGE
 
@@ -21,6 +25,8 @@ The goal of this project is to develop an algorithm that can produce substantial
 ## RESOURCES
 The goal of the project is to provide a new, useful algorithm for video games, and therefore we are targeting consumer-level - CUDA capable hardware. We will use a 3rd party platform to render the output of our algorithm into a terrain mesh. 
 
+---
+
 ## GOALS AND DELIVERABLES
 
 ### Goals
@@ -37,13 +43,19 @@ The goal of the project is to provide a new, useful algorithm for video games, a
 - Working CUDA code and loading-unloading program
 - Documentation in the form of a Report.
 
+---
+
 ## PLATFORM CHOICE
 We plan to make this project usable for video games and so will be using some ubiquitous NVIDIA hardware that is available to us. The specifics are:
 - GeForce® GTX 1080 Ti 
 - GeForce® GTX 1050 Ti 
 
+---
+
 ## POSTER SESSION
 Poster demonstrating the algorithm implemented and a live demo on one of our laptops showing the algorithm in process and iteration times. 
+
+---
 
 ## SCHEDULE
 | Description | Date |
