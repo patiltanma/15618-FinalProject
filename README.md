@@ -9,10 +9,10 @@ Procedurally generated heightmaps have been used to quickly create large height 
 
 ### The Problem
 Hydraulic erosion is a process that has dependencies on : 
-Real-time computation
-Variable height
-Layers in the map that could erode
-Water erosion coefficients
+- Real-time computation
+- Variable height
+- Layers in the map that could erode
+- Water erosion coefficients
 Constructing this and rendering it will introduce potential constraints on parallelism that will need to be worked around.  
 
 ### Computation Time
@@ -30,17 +30,17 @@ The goal of the project is to provide a new, useful algorithm for video games, a
 - Persistent rivers/bodies of water
 
 ### Stretch Goals
-Non-hydraulic erosion methods
-Voxel-based erosion instead of heightmap erosion
+- Non-hydraulic erosion methods
+- Voxel-based erosion instead of heightmap erosion
 
 ### Deliverables
-⋅⋅* Working CUDA code and loading-unloading program
-⋅⋅* Documentation in the form of a Report.
+- Working CUDA code and loading-unloading program
+- Documentation in the form of a Report.
 
 ## PLATFORM CHOICE
 We plan to make this project usable for video games and so will be using some ubiquitous NVIDIA hardware that is available to us. The specifics are:
-⋅⋅* GeForce® GTX 1080 Ti 
-⋅⋅* GeForce® GTX 1050 Ti 
+- GeForce® GTX 1080 Ti 
+- GeForce® GTX 1050 Ti 
 
 ## POSTER SESSION
 Poster demonstrating the algorithm implemented and a live demo on one of our laptops showing the algorithm in process and iteration times. 
