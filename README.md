@@ -58,6 +58,7 @@ Poster demonstrating the algorithm implemented and a live demo on one of our lap
 ---
 
 ## SCHEDULE
+
 | Description | Date |
 | --- | --- |
 | Determine algorithms for base heightmap generation, height map rendering environment. | Nov 05, 2018 |
