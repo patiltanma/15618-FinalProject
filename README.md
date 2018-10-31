@@ -45,6 +45,19 @@ We plan to make this project usable for video games and so will be using some ub
 ## POSTER SESSION
 Poster demonstrating the algorithm implemented and a live demo on one of our laptops showing the algorithm in process and iteration times. 
 
+## SCHEDULE
+| Description   | Date        |
+|---------------|-------------|
+| Determine algorithms for base heightmap generation, height map rendering environment. | Nov 05, 2018 |
+| Implement basic height map generation algorithm. Design algorithm for hydraulic erosion. | Nov 12, 2018 |
+| Begin implementation of an algorithm for hydraulic erosion. | Nov 19, 2018 |
+| Finish implementation of the algorithm. | Nov 26, 2018 |
+| Debug and optimize. Consider adding new features. | Dec 2, 2018 |
+| Debug and optimize. Consider creating an interactive demonstration. | Dec 9, 2018 |
+| Write the final report and prepare for the presentation. | Dec 16, 2018 |
+
+
+
 
 
 
