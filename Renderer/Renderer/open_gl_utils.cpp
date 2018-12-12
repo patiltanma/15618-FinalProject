@@ -224,6 +224,8 @@ void display()
 
 	// render from the vbo
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_map);
+	
+	/*
 	//glVertexPointer(4, GL_FLOAT, 0, 0);
 	glVertexPointer(3, GL_FLOAT, 0, 0);				//(number of elements for the vertex in the array,
 													// type of the varibales in the array,
@@ -233,10 +235,66 @@ void display()
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glColor3f(1.0, 0.0, 0.0);
-
-	//glDrawArrays(GL_LINE_STRIP_ADJACENCY, 0, mesh_width * mesh_height);
-	//glDrawArrays(GL_LINE_STRIP, 0, mesh_width * mesh_height);
 	glDrawArrays(GL_POINTS, 0, mesh_width * mesh_height);
+	*/
+
+
+	cellData *data = (cellData *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
+	glColor3f(1.0, 1.0, 0.0);
+	for (int yy = 0; yy < mesh_height - 1; yy++) {
+		//Makes OpenGL draw a triangle at every three consecutive vertices
+		glBegin(GL_POINTS);
+		for (int xx = 0; xx < mesh_width - 1; xx++) {
+
+			float u = xx / (float)mesh_width;
+			float v = yy / (float)mesh_height;
+			u = u * 2.0f - 1.0f;
+			v = v * 2.0f - 1.0f;
+
+			glVertex3f(u, v, data[xx + yy * mesh_width].height/200);
+
+			
+			//printf("%f\n", data[xx + yy * mesh_width].height);
+		}
+		glEnd();
+	}
+
+
+	// render from the vbo
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_rain_map);
+
+	/*
+	//glVertexPointer(4, GL_FLOAT, 0, 0);
+	glVertexPointer(3, GL_FLOAT, 0, 0);				//(number of elements for the vertex in the array,
+	// type of the varibales in the array,
+	// bytes of data between two vertex values of concern,
+	// starting point)
+
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glColor3f(1.0, 0.0, 0.0);
+	glDrawArrays(GL_POINTS, 0, mesh_width * mesh_height);
+	*/
+
+
+	float *rain_data = (float *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
+	glColor3f(0.0, 0.0, 1.0);
+	for (int yy = 0; yy < mesh_height - 1; yy++) {
+		//Makes OpenGL draw a triangle at every three consecutive vertices
+		glBegin(GL_POINTS);
+		for (int xx = 0; xx < mesh_width - 1; xx++) {
+
+			float u = xx / (float)mesh_width;
+			float v = yy / (float)mesh_height;
+			u = u * 2.0f - 1.0f;
+			v = v * 2.0f - 1.0f;
+
+			glVertex3f(u, v, rain_data[xx + yy * mesh_width] / 200);
+			//printf("%f\n", data[xx + yy * mesh_width].height);
+		}
+		glEnd();
+	}
+
 
 	/*
 	struct vertex_per {
@@ -272,7 +330,7 @@ void display()
 	//glDrawArrays(GL_TRIANGLES, 0, mesh_width * mesh_height);	//(what kind of primitve you want to draw,
 	// starting point of the vertex in the array,
 	// number of vertices you want to draw);
-	glDisableClientState(GL_VERTEX_ARRAY);
+	//glDisableClientState(GL_VERTEX_ARRAY);
 
 	glutSwapBuffers();
 

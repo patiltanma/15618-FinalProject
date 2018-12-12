@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 //simulation constants
 #define G         1.0
 #define WATER_LOSS .98

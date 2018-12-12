@@ -52,5 +52,5 @@
 #define REFRESH_DELAY     100 //ms
 
 // mesh display constants
-#define mesh_width 32
-#define mesh_height 32
+#define mesh_width 64
+#define mesh_height 64
