@@ -43,14 +43,14 @@
 //	OpenGL Constants
 ////////////////////////////////////////////////////////////////////////////////
 // window display size constants
-#define window_width 512
-#define window_height 512
+#define window_width 800
+#define window_height 600
 
 // animation constants
 #define MAX_EPSILON_ERROR 10.0f
 #define THRESHOLD          0.30f
-#define REFRESH_DELAY     100 //ms
+#define REFRESH_DELAY     10 //ms
 
 // mesh display constants
-#define mesh_width 64
-#define mesh_height 64
+#define mesh_width 128
+#define mesh_height 128

@@ -240,7 +240,7 @@ void display()
 
 
 	cellData *data = (cellData *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
-	glColor3f(1.0, 1.0, 0.0);
+	//glColor3f(1.0, 1.0, 0.0);
 	for (int yy = 0; yy < mesh_height - 1; yy++) {
 		//Makes OpenGL draw a triangle at every three consecutive vertices
 		glBegin(GL_POINTS);
@@ -250,46 +250,16 @@ void display()
 			float v = yy / (float)mesh_height;
 			u = u * 2.0f - 1.0f;
 			v = v * 2.0f - 1.0f;
-
+			glColor3f(1.0, 1.0, 0.0);
 			glVertex3f(u, v, data[xx + yy * mesh_width].height/200);
 
+			if (data[xx + yy * mesh_width].water_vol != 0.0f)
+			{
+				printf("%f\n", data[xx + yy * mesh_width].water_vol);
+				glColor3f(0.0, 0.0, 1.0);
+				glVertex3f(u, v, data[xx + yy * mesh_width].water_height / 200);
+			}
 			
-			//printf("%f\n", data[xx + yy * mesh_width].height);
-		}
-		glEnd();
-	}
-
-
-	// render from the vbo
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_rain_map);
-
-	/*
-	//glVertexPointer(4, GL_FLOAT, 0, 0);
-	glVertexPointer(3, GL_FLOAT, 0, 0);				//(number of elements for the vertex in the array,
-	// type of the varibales in the array,
-	// bytes of data between two vertex values of concern,
-	// starting point)
-
-
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glColor3f(1.0, 0.0, 0.0);
-	glDrawArrays(GL_POINTS, 0, mesh_width * mesh_height);
-	*/
-
-
-	float *rain_data = (float *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
-	glColor3f(0.0, 0.0, 1.0);
-	for (int yy = 0; yy < mesh_height - 1; yy++) {
-		//Makes OpenGL draw a triangle at every three consecutive vertices
-		glBegin(GL_POINTS);
-		for (int xx = 0; xx < mesh_width - 1; xx++) {
-
-			float u = xx / (float)mesh_width;
-			float v = yy / (float)mesh_height;
-			u = u * 2.0f - 1.0f;
-			v = v * 2.0f - 1.0f;
-
-			glVertex3f(u, v, rain_data[xx + yy * mesh_width] / 200);
 			//printf("%f\n", data[xx + yy * mesh_width].height);
 		}
 		glEnd();
