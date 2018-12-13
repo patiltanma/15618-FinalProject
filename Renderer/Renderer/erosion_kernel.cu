@@ -32,6 +32,7 @@ inline void cudaAssert(cudaError_t code, const char *file, int line, bool abort 
 
 
 extern float toBW(int bytes, float sec);
+void swap_maps(cellData* &map, cellData* &new_map);
 
 __device__ void
 clear_dest_map(cellData* new_map, int numCells) {
@@ -233,13 +234,15 @@ erode(cellData* total_map, cellData* new_total_map, int numCells, int globalMapD
 		/*atomicAdd(&new_total_map[x+globalMapDim*(y-1)].sediment, sediment_flux.z);*/
 	/*}*/
 
-	//__syncthreads();
+	__syncthreads();
 	//
 	//if (index == 0)
 	//{
 	//	printf("hello world! %f\n", newcell->water_vol);
 	//}
 	
+	
+
 	/*debug_printdump();*/
 	/*debug_compare_maps(total_map, new_total_map);*/
 
@@ -288,6 +291,8 @@ erodeCuda(struct cudaGraphicsResource **vbo_resource_map,
 	cudaThreadSynchronize();
 	erode <<<grid, block>>>(dptr_map, dptr_new_map, numCells, map_dim);
 	cudaThreadSynchronize();
+
+	swap_maps(dptr_map, dptr_new_map);
 
 	//erode <<< grid, block >>>(dptr_map, dptr_new_map, dptr_rain_map, mesh_width, mesh_height);
 

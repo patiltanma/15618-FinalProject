@@ -114,6 +114,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="noise_libs\FastNoise.cpp" />
     <ClCompile Include="open_gl_utils.cpp" />
+    <ClCompile Include="vec3f.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cuda_utils.h" />
@@ -122,6 +123,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="noise_libs\FastNoise.hpp" />
     <ClInclude Include="open_gl_utils.h" />
     <ClInclude Include="print_debug.hpp" />
+    <ClInclude Include="vec3f.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
