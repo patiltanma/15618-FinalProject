@@ -12,6 +12,7 @@
 #include "helper_math.h"
 #include "cycleTimer.h"
 #include "erosion_kernel.h"
+#include "print_debug.hpp"
 
 
 #ifdef DEBUG
@@ -107,10 +108,9 @@ erode(cellData* total_map, cellData* new_total_map, int numCells, int globalMapD
 
 	cellData* cell = &total_map[index];
 	cellData* newcell = &new_total_map[index];
+	///*memcpy(newcell, cell, sizeof(cellData));*/
 
-	/*memcpy(newcell, cell, sizeof(cellData));*/
-
-	/*__syncthreads();*/
+	///*__syncthreads();*/
 
 	cellData left = total_map[max(0, x - 1) + y * globalMapDim];
 	cellData right = total_map[min(x + 1, globalMapDim - 1) + y * globalMapDim];
@@ -159,7 +159,6 @@ erode(cellData* total_map, cellData* new_total_map, int numCells, int globalMapD
 	/*}*/
 
 	float4 water_flux = total_water_flux * water_flux_norm;
-
 
 	//dump sediment
 	float falloff = (DEEP_WATER - min(DEEP_WATER, cell->water_vol)) / DEEP_WATER; //maintain thin water assumption
@@ -234,8 +233,13 @@ erode(cellData* total_map, cellData* new_total_map, int numCells, int globalMapD
 		/*atomicAdd(&new_total_map[x+globalMapDim*(y-1)].sediment, sediment_flux.z);*/
 	/*}*/
 
-	__syncthreads();
-
+	//__syncthreads();
+	//
+	//if (index == 0)
+	//{
+	//	printf("hello world! %f\n", newcell->water_vol);
+	//}
+	
 	/*debug_printdump();*/
 	/*debug_compare_maps(total_map, new_total_map);*/
 
@@ -270,6 +274,7 @@ erodeCuda(struct cudaGraphicsResource **vbo_resource_map,
 	float *dptr_rain_map;
 	checkCudaErrors(cudaGraphicsMapResources(1, vbo_resource_rain_map, 0));
 	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dptr_rain_map, &num_bytes, *vbo_resource_rain_map));
+
 
 	int numCells = mesh_width * mesh_height;
 	int map_dim = mesh_width;

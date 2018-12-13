@@ -90,6 +90,7 @@ int main(int argc, char **argv)
 
 			cellMap[index].height = heightFunc[h_ind](x, y);
 			cellMap[index].water_height = heightFunc[h_ind](x, y);
+			cellMap[index].water_vol = 0.0f;
 			rainMap[index] = rainFunc[r_ind](x, y);
 
 			oldheightMap[index] = heightFunc[h_ind](x, y);

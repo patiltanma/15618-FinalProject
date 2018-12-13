@@ -140,9 +140,9 @@ void createVBO(GLuint *vbo, struct cudaGraphicsResource **vbo_res, unsigned int 
 
 	// initialize buffer object
 	unsigned int size = mesh_width * mesh_height * sizeof(cellData);
-	glBufferData(GL_ARRAY_BUFFER, size, map, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, size, map, GL_DYNAMIC_COPY);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// register this buffer object with CUDA
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(vbo_res, *vbo, vbo_res_flags));
@@ -160,9 +160,9 @@ void createVBO(GLuint *vbo, struct cudaGraphicsResource **vbo_res, unsigned int 
 
 	// initialize buffer object
 	unsigned int size = mesh_width * mesh_height * sizeof(float);
-	glBufferData(GL_ARRAY_BUFFER, size, rain_map, GL_DYNAMIC_DRAW);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBufferData(GL_ARRAY_BUFFER, size, rain_map, GL_DYNAMIC_COPY);
+	
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// register this buffer object with CUDA
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(vbo_res, *vbo, vbo_res_flags));
@@ -231,15 +231,12 @@ void display()
 													// type of the varibales in the array,
 													// bytes of data between two vertex values of concern,
 													// starting point)
-
-
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glColor3f(1.0, 0.0, 0.0);
 	glDrawArrays(GL_POINTS, 0, mesh_width * mesh_height);
 	*/
 
-
-	cellData *data = (cellData *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
+	cellData *data = (cellData *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
 	//glColor3f(1.0, 1.0, 0.0);
 	for (int yy = 0; yy < mesh_height - 1; yy++) {
 		//Makes OpenGL draw a triangle at every three consecutive vertices
@@ -251,8 +248,9 @@ void display()
 			u = u * 2.0f - 1.0f;
 			v = v * 2.0f - 1.0f;
 			glColor3f(1.0, 1.0, 0.0);
-			glVertex3f(u, v, data[xx + yy * mesh_width].height/200);
+			glVertex3f(u, v, (data[xx + yy * mesh_width].height)/200);
 
+			
 			if (data[xx + yy * mesh_width].water_vol != 0.0f)
 			{
 				//printf("%f\n", data[xx + yy * mesh_width].water_vol);
@@ -264,7 +262,7 @@ void display()
 		}
 		glEnd();
 	}
-
+	glUnmapBuffer(GL_ARRAY_BUFFER);
 
 	/*
 	struct vertex_per {

@@ -107,6 +107,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="erosion_kernel.cu" />
+    <CudaCompile Include="print_debug.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cuda_utils.cpp" />
@@ -120,6 +121,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="global.h" />
     <ClInclude Include="noise_libs\FastNoise.hpp" />
     <ClInclude Include="open_gl_utils.h" />
+    <ClInclude Include="print_debug.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
