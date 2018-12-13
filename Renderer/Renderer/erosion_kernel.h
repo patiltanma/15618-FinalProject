@@ -20,7 +20,6 @@ struct cellData {
 	float height;
 	float water_height;
 	float water_vol;
-	float2 vel;
 	float sediment;
 };
 
