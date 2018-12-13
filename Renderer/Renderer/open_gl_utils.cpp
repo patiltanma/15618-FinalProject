@@ -159,7 +159,7 @@ void createVBO(GLuint *vbo, struct cudaGraphicsResource **vbo_res, unsigned int 
 	glBindBuffer(GL_ARRAY_BUFFER, *vbo);
 
 	// initialize buffer object
-	unsigned int size = mesh_width * mesh_height * sizeof(cellData);
+	unsigned int size = mesh_width * mesh_height * sizeof(float);
 	glBufferData(GL_ARRAY_BUFFER, size, rain_map, GL_DYNAMIC_DRAW);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -255,7 +255,7 @@ void display()
 
 			if (data[xx + yy * mesh_width].water_vol != 0.0f)
 			{
-				printf("%f\n", data[xx + yy * mesh_width].water_vol);
+				//printf("%f\n", data[xx + yy * mesh_width].water_vol);
 				glColor3f(0.0, 0.0, 1.0);
 				glVertex3f(u, v, data[xx + yy * mesh_width].water_height / 200);
 			}
