@@ -95,7 +95,7 @@ bool initAndRunGL(int argc, char **argv, cellData *map, cellData *new_map, float
 bool initGL(int *argc, char **argv)
 {
 	glutInit(argc, argv);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowSize(window_width, window_height);
 	glutCreateWindow("Cuda GL Interop (VBO)");
 	glutDisplayFunc(display);
@@ -113,7 +113,15 @@ bool initGL(int *argc, char **argv)
 
 	// default initialization
 	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glEnable(GL_NORMALIZE);
+
+	// enabling glColor as it doenot work with GL_LIGHTING
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+	glEnable(GL_COLOR_MATERIAL);
+
 
 	// viewport
 	glViewport(0, 0, window_width, window_height);
@@ -226,6 +234,7 @@ void display()
 	glTranslatef(0.0, 0.0, translate_z);
 	glRotatef(rotate_x, 1.0, 0.0, 0.0);
 	glRotatef(rotate_y, 0.0, 1.0, 0.0);
+	//glScalef();
 
 	// render from the vbo
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_map);
