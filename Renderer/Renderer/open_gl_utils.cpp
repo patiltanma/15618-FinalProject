@@ -122,7 +122,6 @@ bool initGL(int *argc, char **argv)
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 	glEnable(GL_COLOR_MATERIAL);
 
-
 	// viewport
 	glViewport(0, 0, window_width, window_height);
 
@@ -211,6 +210,7 @@ float translate_z = -3.0;
 void computeFPS(void);
 void drawPoints(cellData *data);
 void drawTriangles(cellData *data);
+void drawPointsHeightColored(cellData *data);
 
 extern char *sSDKsample;
 
@@ -252,7 +252,8 @@ void display()
 
 	cellData *data = (cellData *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
 
-	drawPoints(data);
+	//drawPoints(data);
+	drawPointsHeightColored(data);
 	//drawTriangles(data);
 	//glColor3f(1.0, 1.0, 0.0);
 	
@@ -283,11 +284,55 @@ void drawPoints(cellData *data)
 			{
 				//printf("%f\n", data[xx + yy * mesh_width].water_vol);
 				glColor3f(0.0, 0.0, 1.0);
-				glVertex3f(u, v, data[xx + yy * mesh_width].water_height / 200);
+				glVertex3f(u, v, data[xx + yy * mesh_width].water_height / 100);
 			}
 
 			glColor3f(1.0, 1.0, 0.0);
-			glVertex3f(u, v, (data[xx + yy * mesh_width].height) / 200);
+			glVertex3f(u, v, (data[xx + yy * mesh_width].height) / 100);
+
+			//printf("%f\n", data[xx + yy * mesh_width].height);
+		}
+		glEnd();
+	}
+}
+
+void drawPointsHeightColored(cellData *data)
+{
+	for (int yy = 0; yy < mesh_height - 1; yy++) {
+		//Makes OpenGL draw a triangle at every three consecutive vertices
+		glBegin(GL_POINTS);
+		for (int xx = 0; xx < mesh_width - 1; xx++) {
+
+			float u = xx / (float)mesh_width;
+			float v = yy / (float)mesh_height;
+			u = u * 2.0f - 1.0f;
+			v = v * 2.0f - 1.0f;
+
+
+			if (data[xx + yy * mesh_width].water_vol != 0.0f)
+			{
+				//printf("%f\n", data[xx + yy * mesh_width].water_vol);
+				glColor3f(0.0, 0.0, 1.0);
+				glVertex3f(u, v, data[xx + yy * mesh_width].water_height / 200);
+			}
+			float h = data[xx + yy * mesh_width].height/100;
+			//float r = 1, g = 1, b = 1;
+			/*
+			if (h < 33)
+			{
+				r = 100 / h;
+			}
+			else if (h < 66)
+			{
+				g = 100 / h;
+			}
+			else
+			{
+				b = 100 / h;
+			}
+			*/
+			glColor3f(h, 0.5, 0.5);
+			glVertex3f(u, v, h);
 
 			//printf("%f\n", data[xx + yy * mesh_width].height);
 		}
@@ -309,13 +354,13 @@ void drawTriangles(cellData *data)
 
 			Vec3f normal = computeNormals(xx, yy, data);
 			glNormal3f(normal[0], normal[1], normal[2]);
-			glVertex3f(u, v, data[xx + yy * mesh_width].height / 200);
+			glVertex3f(u, v, data[xx + yy * mesh_width].height / 100);
 
 			v = (yy + 1) / (float)mesh_height;
 			v = v * 2.0f - 1.0f;
 			normal = computeNormals(xx, yy + 1, data);
 			glNormal3f(normal[0], normal[1], normal[2]);
-			glVertex3f(u, v, data[xx + (yy + 1) * mesh_width].height / 200);
+			glVertex3f(u, v, data[xx + (yy + 1) * mesh_width].height / 100);
 		}
 		glEnd();
 	}
