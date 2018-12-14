@@ -89,7 +89,6 @@ erode(float* height, float* water_vol, float* sediment, float* new_height, float
 	int up = x + max(0, y - 1)*globalMapDim;
 	int down = x + min(y + 1, globalMapDim - 1)*globalMapDim;
 
-
 	// positive values indicate outward flow
 	float4 water_vol_dir = make_float4(water_vol[left], water_vol[right], water_vol[up], water_vol[down]);
 	float4 height_dir = make_float4(height[left], height[right], height[up], height[down]);
@@ -137,7 +136,7 @@ erode(float* height, float* water_vol, float* sediment, float* new_height, float
 	float4 sediment_flux = flux_fraction * water_flux_norm*new_cell_sediment;
 
 	//account for frictional and water volume losses
-	float new_cell_water_vol = (cell_water_vol - total_water_flux)*WATER_LOSS;
+	float new_cell_water_vol = (cell_water_vol - total_water_flux) * WATER_LOSS;
 
 	atomicExch(&new_height[index], cell_height + new_cell_deposition - cell_erosion);
 	atomicExch(&new_sediment[index], new_cell_sediment - sum(sediment_flux));
@@ -181,6 +180,7 @@ void swap_maps(float* map, float* new_map) {
 	map = temp;
 }
 
+static bool state = true;
 
 void 
 erodeCuda(struct cudaGraphicsResource **cvr_height, struct cudaGraphicsResource **cvr_water, struct cudaGraphicsResource **cvr_sediment,
@@ -189,6 +189,7 @@ erodeCuda(struct cudaGraphicsResource **cvr_height, struct cudaGraphicsResource 
 
 	size_t num_bytes;
 
+	/*
 	// map OpenGL buffer object for writing from CUDA
 	float *d_height;
 	checkCudaErrors(cudaGraphicsMapResources(1, cvr_height, 0));
@@ -217,6 +218,64 @@ erodeCuda(struct cudaGraphicsResource **cvr_height, struct cudaGraphicsResource 
 	float *d_rain;
 	checkCudaErrors(cudaGraphicsMapResources(1, cvr_rain, 0));
 	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_rain, &num_bytes, *cvr_rain));
+	*/
+	
+	// map OpenGL buffer object for writing from CUDA
+	float *d_height, *d_water, *d_sediment, *d_new_height, *d_new_water, *d_new_sediment;
+	if (state)
+	{
+		checkCudaErrors(cudaGraphicsMapResources(1, cvr_height, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_height, &num_bytes, *cvr_height));
+
+		checkCudaErrors(cudaGraphicsMapResources(1, cvr_water, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_water, &num_bytes, *cvr_water));
+
+		checkCudaErrors(cudaGraphicsMapResources(1, cvr_sediment, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_sediment, &num_bytes, *cvr_sediment));
+
+		checkCudaErrors(cudaGraphicsMapResources(1, cvr_new_height, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_new_height, &num_bytes, *cvr_new_height));
+
+		checkCudaErrors(cudaGraphicsMapResources(1, cvr_new_water, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_new_water, &num_bytes, *cvr_new_water));
+
+		checkCudaErrors(cudaGraphicsMapResources(1, cvr_new_sediment, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_new_sediment, &num_bytes, *cvr_new_sediment));
+
+		state = false;
+	}
+	else
+	{
+		checkCudaErrors(cudaGraphicsMapResources(1, cvr_new_height, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_height, &num_bytes, *cvr_new_height));
+
+		checkCudaErrors(cudaGraphicsMapResources(1, cvr_new_water, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_water, &num_bytes, *cvr_new_water));
+
+		checkCudaErrors(cudaGraphicsMapResources(1, cvr_new_sediment, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_sediment, &num_bytes, *cvr_new_sediment));
+
+		checkCudaErrors(cudaGraphicsMapResources(1, cvr_height, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_new_height, &num_bytes, *cvr_height));
+
+		checkCudaErrors(cudaGraphicsMapResources(1, cvr_water, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_new_water, &num_bytes, *cvr_water));
+
+		checkCudaErrors(cudaGraphicsMapResources(1, cvr_sediment, 0));
+		checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_new_sediment, &num_bytes, *cvr_sediment));
+
+		state = true;
+	}
+
+	float *d_rain;
+	checkCudaErrors(cudaGraphicsMapResources(1, cvr_rain, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_rain, &num_bytes, *cvr_rain));
+	
+	/*
+	swap_maps(d_height, d_new_height);
+	swap_maps(d_water, d_new_water);
+	swap_maps(d_sediment, d_new_sediment);
+	*/
 
 	int numCells = mesh_dim * mesh_dim;
 
@@ -230,9 +289,7 @@ erodeCuda(struct cudaGraphicsResource **cvr_height, struct cudaGraphicsResource 
 	erode <<<grid, block>>>(d_height, d_water, d_sediment, d_new_height, d_new_water, d_new_sediment, numCells, mesh_dim);
 	cudaThreadSynchronize();
 
-	swap_maps(d_height, d_new_height);
-	swap_maps(d_water, d_new_water);
-	swap_maps(d_sediment, d_new_sediment);
+	
 
 	// unmap buffer object
 	checkCudaErrors(cudaGraphicsUnmapResources(1, cvr_height, 0));

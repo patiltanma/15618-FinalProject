@@ -85,6 +85,7 @@ int main(int argc, char **argv)
 			int index = x + MESH_DIM * y;
 
 			height[index] = heightFunc[h_ind](x, y);
+			new_height[index] = heightFunc[h_ind](x, y);
 			rain[index] = rainFunc[r_ind](x, y);
 			heightsum += heightFunc[h_ind](x, y);
 		}

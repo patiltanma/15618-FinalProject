@@ -220,7 +220,7 @@ float rotate_x = 0.0, rotate_y = 0.0;
 float translate_z = -3.0;
 
 void computeFPS(void);
-void drawPoints(float *data);
+void drawPoints(float *data, float *water);
 void drawTriangles(float *data);
 void drawPointsHeightColored(float *data);
 
@@ -251,25 +251,18 @@ void display()
 
 	// render from the vbo
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_height);
-	
-	/*
-	//glVertexPointer(4, GL_FLOAT, 0, 0);
-	glVertexPointer(3, GL_FLOAT, 0, 0);				//(number of elements for the vertex in the array,
-													// type of the varibales in the array,
-													// bytes of data between two vertex values of concern,
-													// starting point)
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glColor3f(1.0, 0.0, 0.0);
-	glDrawArrays(GL_POINTS, 0, mesh_width * mesh_height);
-	*/
+	float *height = (float *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_water);
+	float *water = (float *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
 
-	float *height = (float *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
-
-	//drawPoints(data);
-	drawPointsHeightColored(height);
+	drawPoints(height, water);
+	//drawPointsHeightColored(height);
 	//drawTriangles(data);
-	//glColor3f(1.0, 1.0, 0.0);
 	
+	// unmap vbo
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_height);
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_water);
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
 	glutSwapBuffers();
@@ -280,7 +273,7 @@ void display()
 	computeFPS();
 }
 
-void drawPoints(float *data)
+void drawPoints(float *data, float *water)
 {
 	for (int yy = 0; yy < MESH_DIM - 1; yy++) {
 		//Makes OpenGL draw a triangle at every three consecutive vertices
@@ -292,14 +285,12 @@ void drawPoints(float *data)
 			u = u * 2.0f - 1.0f;
 			v = v * 2.0f - 1.0f;
 
-			/*
-			if (data[xx + yy * MESH_DIM].water_vol != 0.0f)
+			if (water[xx + yy * MESH_DIM] != 0.0f)
 			{
 				//printf("%f\n", data[xx + yy * mesh_width].water_vol);
 				glColor3f(0.0, 0.0, 1.0);
-				glVertex3f(u, v, data[xx + yy * mesh_width].water_height / 100);
+				glVertex3f(u, v, (data[xx + yy * MESH_DIM] + water[xx + yy * MESH_DIM]) / 100);
 			}
-			*/
 
 			glColor3f(1.0, 1.0, 0.0);
 			glVertex3f(u, v, data[xx + yy * MESH_DIM] / 100);
