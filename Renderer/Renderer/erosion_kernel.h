@@ -15,13 +15,19 @@
 //#define MAX(a,b) ((a > b) ? a : b)
 
 struct cellData {
-	float height;
-	float water_height;
-	float water_vol;
-	float sediment;
+	float* height;
+	float* water;
+	float* sediment;
+};
+
+struct vrc_cellData {
+	struct cudaGraphicsResource **height;
+	struct cudaGraphicsResource **water;
+	struct cudaGraphicsResource **sediment;
 };
 
 void runCuda(struct cudaGraphicsResource **vbo_resource, unsigned int, unsigned int, float);
-void erodeCuda(struct cudaGraphicsResource **vbo_resource_map, struct cudaGraphicsResource **vbo_resource_new_map,
-	struct cudaGraphicsResource **vbo_resource_rain_map, unsigned int, unsigned int);
+void erodeCuda(struct cudaGraphicsResource **cvr_height, struct cudaGraphicsResource **cvr_water, struct cudaGraphicsResource **cvr_sediment,
+	struct cudaGraphicsResource **cvr_new_height, struct cudaGraphicsResource **cvr_new_water, struct cudaGraphicsResource **cvr_new_sediment, 
+	struct cudaGraphicsResource **cvr_rain, int mesh_dim);
 

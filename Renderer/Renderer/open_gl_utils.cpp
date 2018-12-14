@@ -4,14 +4,26 @@
 static StopWatchInterface *timer = NULL;
 
 // vbo variables
-GLuint vbo_map = 0;
-struct cudaGraphicsResource *cuda_vbo_resource_map;
+GLuint vbo_height = 0;
+struct cudaGraphicsResource *cvr_height; //CVR = cuda vbo resource
 
-GLuint vbo_new_map = 0;
-struct cudaGraphicsResource *cuda_vbo_resource_new_map;
+GLuint vbo_water = 0;
+struct cudaGraphicsResource *cvr_water;
 
-GLuint vbo_rain_map = 0;
-struct cudaGraphicsResource *cuda_vbo_resource_rain_map;
+GLuint vbo_sediment = 0;
+struct cudaGraphicsResource *cvr_sediment;
+
+GLuint vbo_new_height = 0;
+struct cudaGraphicsResource *cvr_new_height; //CVR = cuda vbo resource
+
+GLuint vbo_new_water = 0;
+struct cudaGraphicsResource *cvr_new_water;
+
+GLuint vbo_new_sediment = 0;
+struct cudaGraphicsResource *cvr_new_sediment;
+
+GLuint vbo_rain = 0;
+struct cudaGraphicsResource *cvr_rain;
 
 //void *d_vbo_buffer = NULL;
 float g_fAnim = 0.0;
@@ -29,12 +41,12 @@ void createVBO(GLuint *vbo, struct cudaGraphicsResource **vbo_res, unsigned int 
 void createVBO(GLuint *vbo, struct cudaGraphicsResource **vbo_res, unsigned int vbo_res_flags, float *rain_map);
 void deleteVBO(GLuint *vbo, struct cudaGraphicsResource *vbo_res);
 
-Vec3f computeNormals(int x, int y, cellData* h);
+Vec3f computeNormals(int x, int y, float* h);
 
 ////////////////////////////////////////////////////////////////////////////////
 //! initialise and run openGL
 ////////////////////////////////////////////////////////////////////////////////
-bool initAndRunGL(int argc, char **argv, cellData *map, cellData *new_map, float *rain_map)
+bool initAndRunGL(int argc, char **argv, cellData *map, cellData *new_map, float *rain)
 {
 	// Create the CUTIL timer
 	sdkCreateTimer(&timer);
@@ -66,21 +78,21 @@ bool initAndRunGL(int argc, char **argv, cellData *map, cellData *new_map, float
 	glutMotionFunc(motion);
 	glutCloseFunc(cleanup);
 
-	
+	// create VBOs
+	createVBO(&vbo_height, &cvr_height, cudaGraphicsMapFlagsWriteDiscard, map->height);					// will read/write to this resource
+	createVBO(&vbo_water, &cvr_water, cudaGraphicsMapFlagsWriteDiscard, map->water);					// will read/write to this resource
+	createVBO(&vbo_sediment, &cvr_sediment, cudaGraphicsMapFlagsWriteDiscard, map->sediment);			// will read/write to this resource
 
-	// create VBO
-	createVBO(&vbo_map, &cuda_vbo_resource_map, cudaGraphicsMapFlagsWriteDiscard, map); // will read/write to this resource
-	createVBO(&vbo_new_map, &cuda_vbo_resource_new_map, cudaGraphicsMapFlagsWriteDiscard, new_map); // will read/write to this resource
-	createVBO(&vbo_rain_map, &cuda_vbo_resource_rain_map, cudaGraphicsMapFlagsWriteDiscard, rain_map); // will read/write to this resource
+	createVBO(&vbo_new_height, &cvr_new_height, cudaGraphicsMapFlagsWriteDiscard, new_map->height);					// will read/write to this resource
+	createVBO(&vbo_new_water, &cvr_new_water, cudaGraphicsMapFlagsWriteDiscard, new_map->water);				// will read/write to this resource
+	createVBO(&vbo_new_sediment, &cvr_new_sediment, cudaGraphicsMapFlagsWriteDiscard, new_map->sediment);		// will read/write to this resource
 
-	// run the cuda part
-	//runCuda(&cuda_vbo_resource);
-	//runCuda(&cuda_vbo_resource, mesh_width, mesh_height, g_fAnim);
-	//erodeCuda((float*)heightMap, 32);
-	
-	//runCuda(&cuda_vbo_resource, mesh_width, mesh_height, g_fAnim);
-	erodeCuda(&cuda_vbo_resource_map, &cuda_vbo_resource_new_map, &cuda_vbo_resource_rain_map, 
-		mesh_width, mesh_height);
+	createVBO(&vbo_rain, &cvr_rain, cudaGraphicsMapFlagsWriteDiscard, rain);
+
+
+	erodeCuda(&cvr_height, &cvr_water, &cvr_sediment,
+		&cvr_new_height, &cvr_new_water, &cvr_new_sediment,
+		&cvr_rain, MESH_DIM);
 
 	// start rendering mainloop
 	glutMainLoop();
@@ -149,7 +161,7 @@ void createVBO(GLuint *vbo, struct cudaGraphicsResource **vbo_res, unsigned int 
 	glBindBuffer(GL_ARRAY_BUFFER, *vbo);
 
 	// initialize buffer object
-	unsigned int size = mesh_width * mesh_height * sizeof(cellData);
+	unsigned int size = MESH_DIM * MESH_DIM * sizeof(cellData);
 	glBufferData(GL_ARRAY_BUFFER, size, map, GL_DYNAMIC_COPY);
 
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -160,7 +172,7 @@ void createVBO(GLuint *vbo, struct cudaGraphicsResource **vbo_res, unsigned int 
 	SDK_CHECK_ERROR_GL();
 }
 
-void createVBO(GLuint *vbo, struct cudaGraphicsResource **vbo_res, unsigned int vbo_res_flags, float *rain_map)
+void createVBO(GLuint *vbo, struct cudaGraphicsResource **vbo_res, unsigned int vbo_res_flags, float *map)
 {
 	assert(vbo);
 
@@ -169,8 +181,8 @@ void createVBO(GLuint *vbo, struct cudaGraphicsResource **vbo_res, unsigned int 
 	glBindBuffer(GL_ARRAY_BUFFER, *vbo);
 
 	// initialize buffer object
-	unsigned int size = mesh_width * mesh_height * sizeof(float);
-	glBufferData(GL_ARRAY_BUFFER, size, rain_map, GL_DYNAMIC_COPY);
+	unsigned int size = MESH_DIM * MESH_DIM * sizeof(float);
+	glBufferData(GL_ARRAY_BUFFER, size, map, GL_DYNAMIC_COPY);
 	
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -208,9 +220,9 @@ float rotate_x = 0.0, rotate_y = 0.0;
 float translate_z = -3.0;
 
 void computeFPS(void);
-void drawPoints(cellData *data);
-void drawTriangles(cellData *data);
-void drawPointsHeightColored(cellData *data);
+void drawPoints(float *data);
+void drawTriangles(float *data);
+void drawPointsHeightColored(float *data);
 
 extern char *sSDKsample;
 
@@ -223,8 +235,9 @@ void display()
 
 	// run CUDA kernel to generate vertex positions
 	//runCuda(&cuda_vbo_resource, mesh_width, mesh_height, g_fAnim);
-	erodeCuda(&cuda_vbo_resource_map, &cuda_vbo_resource_new_map, &cuda_vbo_resource_rain_map,
-		mesh_width, mesh_height);
+	erodeCuda(&cvr_height, &cvr_water, &cvr_sediment,
+		&cvr_new_height, &cvr_new_water, &cvr_new_sediment,
+		&cvr_rain, MESH_DIM);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -237,7 +250,7 @@ void display()
 	//glScalef();
 
 	// render from the vbo
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_map);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_height);
 	
 	/*
 	//glVertexPointer(4, GL_FLOAT, 0, 0);
@@ -250,10 +263,10 @@ void display()
 	glDrawArrays(GL_POINTS, 0, mesh_width * mesh_height);
 	*/
 
-	cellData *data = (cellData *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
+	float *height = (float *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
 
 	//drawPoints(data);
-	drawPointsHeightColored(data);
+	drawPointsHeightColored(height);
 	//drawTriangles(data);
 	//glColor3f(1.0, 1.0, 0.0);
 	
@@ -267,28 +280,29 @@ void display()
 	computeFPS();
 }
 
-void drawPoints(cellData *data)
+void drawPoints(float *data)
 {
-	for (int yy = 0; yy < mesh_height - 1; yy++) {
+	for (int yy = 0; yy < MESH_DIM - 1; yy++) {
 		//Makes OpenGL draw a triangle at every three consecutive vertices
 		glBegin(GL_POINTS);
-		for (int xx = 0; xx < mesh_width - 1; xx++) {
+		for (int xx = 0; xx < MESH_DIM - 1; xx++) {
 
-			float u = xx / (float)mesh_width;
-			float v = yy / (float)mesh_height;
+			float u = xx / (float)MESH_DIM;
+			float v = yy / (float)MESH_DIM;
 			u = u * 2.0f - 1.0f;
 			v = v * 2.0f - 1.0f;
 
-
-			if (data[xx + yy * mesh_width].water_vol != 0.0f)
+			/*
+			if (data[xx + yy * MESH_DIM].water_vol != 0.0f)
 			{
 				//printf("%f\n", data[xx + yy * mesh_width].water_vol);
 				glColor3f(0.0, 0.0, 1.0);
 				glVertex3f(u, v, data[xx + yy * mesh_width].water_height / 100);
 			}
+			*/
 
 			glColor3f(1.0, 1.0, 0.0);
-			glVertex3f(u, v, (data[xx + yy * mesh_width].height) / 100);
+			glVertex3f(u, v, data[xx + yy * MESH_DIM] / 100);
 
 			//printf("%f\n", data[xx + yy * mesh_width].height);
 		}
@@ -296,41 +310,27 @@ void drawPoints(cellData *data)
 	}
 }
 
-void drawPointsHeightColored(cellData *data)
+void drawPointsHeightColored(float *data)
 {
-	for (int yy = 0; yy < mesh_height - 1; yy++) {
+	for (int yy = 0; yy < MESH_DIM - 1; yy++) {
 		//Makes OpenGL draw a triangle at every three consecutive vertices
 		glBegin(GL_POINTS);
-		for (int xx = 0; xx < mesh_width - 1; xx++) {
+		for (int xx = 0; xx < MESH_DIM - 1; xx++) {
 
-			float u = xx / (float)mesh_width;
-			float v = yy / (float)mesh_height;
+			float u = xx / (float)MESH_DIM;
+			float v = yy / (float)MESH_DIM;
 			u = u * 2.0f - 1.0f;
 			v = v * 2.0f - 1.0f;
 
-
-			if (data[xx + yy * mesh_width].water_vol != 0.0f)
+			/*
+			if (data[xx + yy * MESH_DIM].water_vol != 0.0f)
 			{
 				//printf("%f\n", data[xx + yy * mesh_width].water_vol);
 				glColor3f(0.0, 0.0, 1.0);
 				glVertex3f(u, v, data[xx + yy * mesh_width].water_height / 200);
 			}
-			float h = data[xx + yy * mesh_width].height/100;
-			//float r = 1, g = 1, b = 1;
-			/*
-			if (h < 33)
-			{
-				r = 100 / h;
-			}
-			else if (h < 66)
-			{
-				g = 100 / h;
-			}
-			else
-			{
-				b = 100 / h;
-			}
 			*/
+			float h = data[xx + yy * MESH_DIM] / 100;
 			glColor3f(h, 0.5, 0.5);
 			glVertex3f(u, v, h);
 
@@ -340,34 +340,34 @@ void drawPointsHeightColored(cellData *data)
 	}
 }
 
-void drawTriangles(cellData *data)
+void drawTriangles(float *data)
 {
 	glColor3f(0.3f, 0.9f, 0.0f);
-	for (int yy = 0; yy < mesh_height - 1; yy++) {
+	for (int yy = 0; yy < MESH_DIM - 1; yy++) {
 		//Makes OpenGL draw a triangle at every three consecutive vertices
 		glBegin(GL_TRIANGLE_STRIP);
-		for (int xx = 0; xx < mesh_width; xx++) {
-			float u = xx / (float)mesh_width;
-			float v = yy / (float)mesh_height;
+		for (int xx = 0; xx < MESH_DIM; xx++) {
+			float u = xx / (float)MESH_DIM;
+			float v = yy / (float)MESH_DIM;
 			u = u * 2.0f - 1.0f;
 			v = v * 2.0f - 1.0f;
 
 			Vec3f normal = computeNormals(xx, yy, data);
 			glNormal3f(normal[0], normal[1], normal[2]);
-			glVertex3f(u, v, data[xx + yy * mesh_width].height / 100);
+			glVertex3f(u, v, data[xx + yy * MESH_DIM] / 100);
 
-			v = (yy + 1) / (float)mesh_height;
+			v = (yy + 1) / (float)MESH_DIM;
 			v = v * 2.0f - 1.0f;
 			normal = computeNormals(xx, yy + 1, data);
 			glNormal3f(normal[0], normal[1], normal[2]);
-			glVertex3f(u, v, data[xx + (yy + 1) * mesh_width].height / 100);
+			glVertex3f(u, v, data[xx + (yy + 1) * MESH_DIM] / 100);
 		}
 		glEnd();
 	}
 }
 
 
-Vec3f computeNormals(int x, int y, cellData* h)
+Vec3f computeNormals(int x, int y, float* h)
 {
 	//Vec3f normals2;
 	Vec3f sum(0.0f, 0.0f, 0.0f);
@@ -375,37 +375,37 @@ Vec3f computeNormals(int x, int y, cellData* h)
 	Vec3f out;
 	if (y > 0) {
 		//out = Vec3f(0.0f, hs[z - 1][x] - hs[z][x], -1.0f);
-		out = Vec3f(0.0f, h[x + (y-1) * mesh_width].water_height - h[x + y * mesh_width].water_height, -1.0f);
+		out = Vec3f(0.0f, h[x + (y-1) * MESH_DIM] - h[x + y * MESH_DIM], -1.0f);
 	}
 
 	Vec3f in;
-	if (y < mesh_height - 1) {
+	if (y < MESH_DIM - 1) {
 		//in = Vec3f(0.0f, hs[z + 1][x] - hs[z][x], 1.0f);
-		in = Vec3f(0.0f, h[x + (y + 1) * mesh_width].water_height - h[x + y * mesh_width].water_height, 1.0f);
+		in = Vec3f(0.0f, h[x + (y + 1) * MESH_DIM] - h[x + y * MESH_DIM], 1.0f);
 	}
 
 	Vec3f left;
 	if (x > 0) {
 		//left = Vec3f(-1.0f, hs[z][x - 1] - hs[z][x], 0.0f);
-		left = Vec3f(-1.0f, h[(x - 1) + y * mesh_width].water_height - h[x + y * mesh_width].water_height, 0.0f);
+		left = Vec3f(-1.0f, h[(x - 1) + y * MESH_DIM] - h[x + y * MESH_DIM], 0.0f);
 	}
 
 	Vec3f right;
-	if (x < mesh_width - 1) {
+	if (x < MESH_DIM - 1) {
 		//right = Vec3f(1.0f, hs[z][x + 1] - hs[z][x], 0.0f);
-		right = Vec3f(1.0f, h[(x + 1) + y * mesh_width].water_height - h[x + y * mesh_width].water_height, 0.0f);
+		right = Vec3f(1.0f, h[(x + 1) + y * MESH_DIM] - h[x + y * MESH_DIM], 0.0f);
 	}
 
 	if (x > 0 && y > 0) {
 		sum += out.cross(left).normalize();
 	}
-	if (x > 0 && y < mesh_height - 1) {
+	if (x > 0 && y < MESH_DIM - 1) {
 		sum += left.cross(in).normalize();
 	}
-	if (x < mesh_width - 1 && y < mesh_height - 1) {
+	if (x < MESH_DIM - 1 && y < MESH_DIM - 1) {
 		sum += in.cross(right).normalize();
 	}
-	if (x < mesh_width - 1 && y > 0) {
+	if (x < MESH_DIM - 1 && y > 0) {
 		sum += right.cross(out).normalize();
 	}
 
@@ -421,19 +421,39 @@ void cleanup()
 {
 	sdkDeleteTimer(&timer);
 
-	if (vbo_map)
+	if (vbo_height)
 	{
-		deleteVBO(&vbo_map, cuda_vbo_resource_map);
+		deleteVBO(&vbo_height, cvr_height);
 	}
 
-	if (vbo_new_map)
+	if (vbo_water)
 	{
-		deleteVBO(&vbo_new_map, cuda_vbo_resource_new_map);
+		deleteVBO(&vbo_water, cvr_water);
 	}
 
-	if (vbo_rain_map)
+	if (vbo_sediment)
 	{
-		deleteVBO(&vbo_rain_map, cuda_vbo_resource_rain_map);
+		deleteVBO(&vbo_sediment, cvr_sediment);
+	}
+
+	if (vbo_new_height)
+	{
+		deleteVBO(&vbo_new_height, cvr_new_height);
+	}
+
+	if (vbo_new_water)
+	{
+		deleteVBO(&vbo_new_water, cvr_new_water);
+	}
+
+	if (vbo_new_sediment)
+	{
+		deleteVBO(&vbo_new_sediment, cvr_new_sediment);
+	}
+
+	if (vbo_rain)
+	{
+		deleteVBO(&vbo_rain, cvr_rain);
 	}
 }
 

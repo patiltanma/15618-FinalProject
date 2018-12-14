@@ -32,7 +32,7 @@ inline void cudaAssert(cudaError_t code, const char *file, int line, bool abort 
 
 
 extern float toBW(int bytes, float sec);
-void swap_maps(cellData* &map, cellData* &new_map);
+void swap_maps(float* map, float* new_map);
 
 __device__ void
 clear_dest_map(cellData* new_map, int numCells) {
@@ -65,41 +65,18 @@ get_map(cellData* map, cellData* total_map, int mapDim, int globalMapDim) {
 }
 
 
-__device__ void
-get_neighbors(cellData* map, cellData* neighbors, int mapDim) {
+__global__ void add_rain(float* water, float* rain, int mesh_dim) {
 
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
+	int index = x + mesh_dim * y;
 
-	//currently other parts of the program stop updates outside of the 
-	//absolute edges of the map
-	int left = max(0, x - 1);
-	int right = min(x + 1, mapDim - 1);
-	int up = max(0, y - 1);
-	int down = min(y + 1, mapDim - 1);
-
-	neighbors[0] = map[left + y * mapDim];
-	neighbors[1] = map[right + y * mapDim];
-	neighbors[2] = map[x + up * mapDim];
-	neighbors[3] = map[x + down * mapDim];
-}
-
-
-__global__ void add_rain(cellData* total_map, float* rainMap, int globalMapDim) {
-
-	int x = blockDim.x*blockIdx.x + threadIdx.x;
-	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = x + globalMapDim * y;
-
-	total_map[index].water_vol += rainMap[index];
-	total_map[index].water_height += rainMap[index];
-	/*cellData* total_map = d_total_map;*/
-
+	water[index] += rain[index];
 }
 
 
 __global__ void
-erode(cellData* total_map, cellData* new_total_map, int numCells, int globalMapDim) {
+erode(float* height, float* water_vol, float* sediment, float* new_height, float* new_water_vol, float* new_sediment, int numCells, int globalMapDim) {
 
 	//TODO: lock down block sizes and dimensioning scheme
 
@@ -107,199 +84,164 @@ erode(cellData* total_map, cellData* new_total_map, int numCells, int globalMapD
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = x + globalMapDim * y;
 
-	cellData* cell = &total_map[index];
-	cellData* newcell = &new_total_map[index];
-	///*memcpy(newcell, cell, sizeof(cellData));*/
-
-	///*__syncthreads();*/
-
-	cellData left = total_map[max(0, x - 1) + y * globalMapDim];
-	cellData right = total_map[min(x + 1, globalMapDim - 1) + y * globalMapDim];
-	cellData up = total_map[x + max(0, y - 1)*globalMapDim];
-	cellData down = total_map[x + min(y + 1, globalMapDim - 1)*globalMapDim];
-
-	/* do actual erosion updates for given timestep.  this happens first because it simplifies propogating
-	   sediment to other cells and it's happening in a cycle so order doesn't matter much */
+	int left = max(0, x - 1) + y * globalMapDim;
+	int right = min(x + 1, globalMapDim - 1) + y * globalMapDim;
+	int up = x + max(0, y - 1)*globalMapDim;
+	int down = x + min(y + 1, globalMapDim - 1)*globalMapDim;
 
 
-	   /*if (cell->water_vol> 0)*/
-		   /*debug_print_cell(x,y,cell);*/
+	// positive values indicate outward flow
+	float4 water_vol_dir = make_float4(water_vol[left], water_vol[right], water_vol[up], water_vol[down]);
+	float4 height_dir = make_float4(height[left], height[right], height[up], height[down]);
+	float4 water_height_dir = height_dir + water_vol_dir;
 
-	   // positive values indicate outward flow
-	float4 height_dir = make_float4(left.height, right.height, up.height, down.height);
-	float4 water_height_dir = make_float4(left.water_height, right.water_height, up.water_height, down.water_height);
+	float cell_height = height[index];
+	float cell_water_vol = water_vol[index];
+	float cell_sediment = sediment[index];
 
-	float4 delta_h_dir = -water_height_dir + cell->water_height;
-
-	//this is velocity because assuming unit distance between cells
-	/*float4 cell_v = VEL_LOSS*make_float4(cell->vel.x, -cell->vel.x, cell->vel.y, -cell->vel.y);*/
-	/*float4 v_dir = cell_v+G/4;*/
-	/*float4 v_dir = make_float4(G/4.0);*/
-	/*float vel_total = sum(v_dir);*/
-	/*float4 water_flow= clamp(delta_h_dir*v_dir, 0.0, 1000);*/
-	/*float total_water_flow= sum(water_flow);*/
-
+	float cell_water_height = height[index] + cell_water_vol;
+	float4 delta_h_dir = -(water_height_dir)+cell_water_height;
 
 	//assume all water than can flow will AT CONSTANT SPEED
 	float4 water_flow = clamp(delta_h_dir, 0.0, 1000) / 4;
 	float total_water_flow = sum(water_flow);
 
-	float total_water_flux = fminf(cell->water_vol, total_water_flow);
+	float total_water_flux = fminf(cell_water_vol, total_water_flow);
 
 	float4 water_flux_norm = make_float4(0.0);
 	float flux_fraction = 0.0;
 
-	if (total_water_flux > 0.0) {
+	if (total_water_flux>0.0) {
 		water_flux_norm = water_flow / total_water_flow;
-		flux_fraction = total_water_flux / cell->water_vol;
+		flux_fraction = total_water_flux / cell_water_vol;
 	}
 
 	/*if (total_water_flux > cell->water_vol){*/
-		/*water_flux_norm = make_float4(1.0);*/
-		/*flux_fraction = 1.0;*/
+	/*water_flux_norm = make_float4(1.0);*/
+	/*flux_fraction = 1.0;*/
 	/*}*/
 
 	float4 water_flux = total_water_flux * water_flux_norm;
 
-	//dump sediment
-	float falloff = (DEEP_WATER - min(DEEP_WATER, cell->water_vol)) / DEEP_WATER; //maintain thin water assumption
-	float sediment_capacity = falloff * cell->water_vol*SOLUBILITY; //might want to make this a max of flow or something
 
-	//velocity*steepness = material eroded cos(atan(2/abs(dH.x+dH.y)))
+	//dump sediment
+	float falloff = (DEEP_WATER - min(DEEP_WATER, cell_water_vol)) / DEEP_WATER; //maintain thin water assumption
+	float sediment_capacity = falloff * cell_water_vol*SOLUBILITY; //might want to make this a max of flow or something
+
+																   //velocity*steepness = material eroded cos(atan(2/abs(dH.x+dH.y)))
 	float cell_erosion = total_water_flux * ABRAISION; //could add additional effects of sediment on erosion here
 
-	float new_deposition = fmaxf(0, cell->sediment + cell_erosion - sediment_capacity);
-	float new_sediment = fminf(cell->sediment + cell_erosion, sediment_capacity);
+	float new_cell_deposition = fmaxf(0, cell_sediment + cell_erosion - sediment_capacity);
+	float new_cell_sediment = fminf(cell_sediment + cell_erosion, sediment_capacity);
 
-	float4 sediment_flux = flux_fraction * water_flux_norm*new_sediment;
+	float4 sediment_flux = flux_fraction * water_flux_norm*new_cell_sediment;
 
 	//account for frictional and water volume losses
-	float new_water_vol = (cell->water_vol - total_water_flux)*WATER_LOSS;
+	float new_cell_water_vol = (cell_water_vol - total_water_flux)*WATER_LOSS;
 
-	atomicExch(&newcell->height, cell->height + new_deposition - cell_erosion);
-	atomicExch(&newcell->sediment, new_sediment - sum(sediment_flux));
-	atomicExch(&newcell->water_vol, new_water_vol);
-	atomicExch(&newcell->water_height, newcell->height + new_water_vol);
+	atomicExch(&new_height[index], cell_height + new_cell_deposition - cell_erosion);
+	atomicExch(&new_sediment[index], new_cell_sediment - sum(sediment_flux));
+	atomicExch(&new_water_vol[index], new_cell_water_vol);
 
-	__syncthreads();
-	if (x > 0) { // left neighbor
-		new_total_map[x - 1 + globalMapDim * y].water_vol += water_flux.x;
-		new_total_map[x - 1 + globalMapDim * y].water_height += water_flux.x;
-		new_total_map[x - 1 + globalMapDim * y].sediment += sediment_flux.x;
+	if (x>0) { // left neighbor
+		atomicAdd(&new_water_vol[x - 1 + globalMapDim * y], water_flux.x);
+		/*atomicAdd(&new_water_height[x-1+globalMapDim*y], water_flux.x);*/
+		atomicAdd(&new_sediment[x - 1 + globalMapDim * y], sediment_flux.x);
 	}
-
-	__syncthreads();
-	if (x < globalMapDim - 1) { //right neighbor
-		new_total_map[x + 1 + globalMapDim * y].water_vol += water_flux.y;
-		new_total_map[x + 1 + globalMapDim * y].water_height += water_flux.y;
-		new_total_map[x + 1 + globalMapDim * y].sediment += sediment_flux.y;
-	}
-
-	__syncthreads();
-	if (y < globalMapDim - 1) { //top neighbor
-		new_total_map[x + globalMapDim * (y + 1)].water_vol += water_flux.w;
-		new_total_map[x + globalMapDim * (y + 1)].water_height += water_flux.w;
-		new_total_map[x + globalMapDim * (y + 1)].sediment += sediment_flux.w;
-	}
-
-	__syncthreads();
-	if (y > 0) { // bottom neighbor
-		new_total_map[x + globalMapDim * (y - 1)].water_vol += water_flux.z;
-		new_total_map[x + globalMapDim * (y - 1)].water_height += water_flux.z;
-		new_total_map[x + globalMapDim * (y - 1)].sediment += sediment_flux.z;
-	}
-
-
-	/*if (x>0){ // left neighbor*/
-		/*atomicAdd(&new_total_map[x-1+globalMapDim*y].water_vol, water_flux.x);*/
-		/*atomicAdd(&new_total_map[x-1+globalMapDim*y].water_height, water_flux.x);*/
-		/*atomicAdd(&new_total_map[x-1+globalMapDim*y].sediment, sediment_flux.x);*/
-	/*}*/
 	/*__syncthreads();*/
-	/*if (x<globalMapDim-1){ //right neighbor*/
-		/*atomicAdd(&new_total_map[x+1+globalMapDim*y].water_vol, water_flux.y);*/
-		/*atomicAdd(&new_total_map[x+1+globalMapDim*y].water_height, water_flux.y);*/
-		/*atomicAdd(&new_total_map[x+1+globalMapDim*y].sediment, sediment_flux.y);*/
-	/*}*/
+	if (x<globalMapDim - 1) { //right neighbor
+		atomicAdd(&new_water_vol[x + 1 + globalMapDim * y], water_flux.y);
+		/*atomicAdd(&new_water_height[x+1+globalMapDim*y], water_flux.y);*/
+		atomicAdd(&new_sediment[x + 1 + globalMapDim * y], sediment_flux.y);
+	}
 	/*__syncthreads();*/
-	/*if (y<globalMapDim-1){ //top neighbor*/
-		/*atomicAdd(&new_total_map[x+globalMapDim*(y+1)].water_vol, water_flux.w);*/
-		/*atomicAdd(&new_total_map[x+globalMapDim*(y+1)].water_height, water_flux.w);*/
-		/*atomicAdd(&new_total_map[x+globalMapDim*(y+1)].sediment, sediment_flux.w);*/
-	/*}*/
+	if (y<globalMapDim - 1) { //top neighbor
+		atomicAdd(&new_water_vol[x + globalMapDim * (y + 1)], water_flux.w);
+		/*atomicAdd(&new_ma->water_height[x+globalMapDim*(y+1)], water_flux.w);*/
+		atomicAdd(&new_sediment[x + globalMapDim * (y + 1)], sediment_flux.w);
+	}
 	/*__syncthreads();*/
-	/*if (y>0){ // bottom neighbor*/
-		/*atomicAdd(&new_total_map[x+globalMapDim*(y-1)].water_vol, water_flux.z);*/
-		/*atomicAdd(&new_total_map[x+globalMapDim*(y-1)].water_height, water_flux.z);*/
-		/*atomicAdd(&new_total_map[x+globalMapDim*(y-1)].sediment, sediment_flux.z);*/
-	/*}*/
+	if (y>0) { // bottom neighbor
+		atomicAdd(&new_water_vol[x + globalMapDim * (y - 1)], water_flux.z);
+		/*atomicAdd(&new_ma->water_height[x+globalMapDim*(y-1)], water_flux.z);*/
+		atomicAdd(&new_sediment[x + globalMapDim * (y - 1)], sediment_flux.z);
+	}
 
-	__syncthreads();
-	//
-	//if (index == 0)
-	//{
-	//	printf("hello world! %f\n", newcell->water_vol);
-	//}
-	
-	
+	/*__syncthreads();*/
 
 	/*debug_printdump();*/
 	/*debug_compare_maps(total_map, new_total_map);*/
-
 }
 
 
-void swap_maps(cellData* &map, cellData* &new_map) {
+void swap_maps(float* map, float* new_map) {
 
-	cellData* temp = new_map;
+	float* temp = new_map;
 	new_map = map;
 	map = temp;
 }
 
 
-void
-erodeCuda(struct cudaGraphicsResource **vbo_resource_map,
-	struct cudaGraphicsResource **vbo_resource_new_map,
-	struct cudaGraphicsResource **vbo_resource_rain_map,
-	unsigned int mesh_width, unsigned int mesh_height) {
+void 
+erodeCuda(struct cudaGraphicsResource **cvr_height, struct cudaGraphicsResource **cvr_water, struct cudaGraphicsResource **cvr_sediment,
+	struct cudaGraphicsResource **cvr_new_height, struct cudaGraphicsResource **cvr_new_water, struct cudaGraphicsResource **cvr_new_sediment,
+	struct cudaGraphicsResource **cvr_rain, int mesh_dim) {
 
 	size_t num_bytes;
 
 	// map OpenGL buffer object for writing from CUDA
-	cellData *dptr_map;
-	checkCudaErrors(cudaGraphicsMapResources(1, vbo_resource_map, 0));
-	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dptr_map, &num_bytes, *vbo_resource_map));
+	float *d_height;
+	checkCudaErrors(cudaGraphicsMapResources(1, cvr_height, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_height, &num_bytes, *cvr_height));
 
-	cellData *dptr_new_map;
-	checkCudaErrors(cudaGraphicsMapResources(1, vbo_resource_new_map, 0));
-	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dptr_new_map, &num_bytes, *vbo_resource_new_map));
+	float *d_water;
+	checkCudaErrors(cudaGraphicsMapResources(1, cvr_water, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_water, &num_bytes, *cvr_water));
 
-	float *dptr_rain_map;
-	checkCudaErrors(cudaGraphicsMapResources(1, vbo_resource_rain_map, 0));
-	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dptr_rain_map, &num_bytes, *vbo_resource_rain_map));
+	float *d_sediment;
+	checkCudaErrors(cudaGraphicsMapResources(1, cvr_sediment, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_sediment, &num_bytes, *cvr_sediment));
 
+	float *d_new_height;
+	checkCudaErrors(cudaGraphicsMapResources(1, cvr_new_height, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_new_height, &num_bytes, *cvr_new_height));
 
-	int numCells = mesh_width * mesh_height;
-	int map_dim = mesh_width;
+	float *d_new_water;
+	checkCudaErrors(cudaGraphicsMapResources(1, cvr_new_water, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_new_water, &num_bytes, *cvr_new_water));
+
+	float *d_new_sediment;
+	checkCudaErrors(cudaGraphicsMapResources(1, cvr_new_sediment, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_new_sediment, &num_bytes, *cvr_new_sediment));
+
+	float *d_rain;
+	checkCudaErrors(cudaGraphicsMapResources(1, cvr_rain, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&d_rain, &num_bytes, *cvr_rain));
+
+	int numCells = mesh_dim * mesh_dim;
 
 	// execute the kernel
-	//launch_kernel(dptr, mesh_width, mesh_height, g_fAnim);
-	dim3 block(BLOCKDIM, BLOCKDIM, 1);
-	dim3 grid((map_dim + BLOCKDIM - 1) / BLOCKDIM, (map_dim + BLOCKDIM - 1) / BLOCKDIM);
-
-	add_rain <<<grid, block>>>(dptr_map, dptr_rain_map, map_dim);
+	int gridSize = (mesh_dim + BLOCKDIM - 1) / BLOCKDIM;
+	dim3 grid(gridSize, gridSize);
+	dim3 block(BLOCKDIM, BLOCKDIM);
+	
+	add_rain <<<grid, block>>>(d_water, d_rain, mesh_dim);
 	cudaThreadSynchronize();
-	erode <<<grid, block>>>(dptr_map, dptr_new_map, numCells, map_dim);
+	erode <<<grid, block>>>(d_height, d_water, d_sediment, d_new_height, d_new_water, d_new_sediment, numCells, mesh_dim);
 	cudaThreadSynchronize();
 
-	swap_maps(dptr_map, dptr_new_map);
-
-	//erode <<< grid, block >>>(dptr_map, dptr_new_map, dptr_rain_map, mesh_width, mesh_height);
+	swap_maps(d_height, d_new_height);
+	swap_maps(d_water, d_new_water);
+	swap_maps(d_sediment, d_new_sediment);
 
 	// unmap buffer object
-	checkCudaErrors(cudaGraphicsUnmapResources(1, vbo_resource_map, 0));
-	checkCudaErrors(cudaGraphicsUnmapResources(1, vbo_resource_new_map, 0));
-	checkCudaErrors(cudaGraphicsUnmapResources(1, vbo_resource_rain_map, 0));
+	checkCudaErrors(cudaGraphicsUnmapResources(1, cvr_height, 0));
+	checkCudaErrors(cudaGraphicsUnmapResources(1, cvr_water, 0));
+	checkCudaErrors(cudaGraphicsUnmapResources(1, cvr_sediment, 0));
+	checkCudaErrors(cudaGraphicsUnmapResources(1, cvr_new_height, 0));
+	checkCudaErrors(cudaGraphicsUnmapResources(1, cvr_new_water, 0));
+	checkCudaErrors(cudaGraphicsUnmapResources(1, cvr_new_sediment, 0));
+	checkCudaErrors(cudaGraphicsUnmapResources(1, cvr_rain, 0));
 }
 
 __global__ void

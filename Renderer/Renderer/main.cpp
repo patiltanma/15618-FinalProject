@@ -62,53 +62,54 @@ int main(int argc, char **argv)
 
 	myNoise.SetNoiseType(FastNoise::SimplexFractal); // Set the desired noise type
 
-	/*
-	mapCell *heightMap = (mapCell *)malloc(sizeof(mapCell)*mesh_width*mesh_height);
-	for (int xx = 0; xx < mesh_width; xx++) {
-		for (int yy = 0; yy < mesh_height; yy++) {
-			heightMap[yy*mesh_width + xx].x = xx;
-			heightMap[yy*mesh_width + xx].y = yy;
-			heightMap[yy*mesh_width + xx].z = myNoise.GetNoise(xx, yy);
-			printf("%f\n", heightMap[yy*mesh_width + xx].z);
-		}
-	}
-	*/
-
 	int h_ind = 2;
 	int r_ind = 0;
 
-	auto *cellMap = new cellData[mesh_width * mesh_height]; // 2D heightmap to create terrain
-	auto *oldheightMap = new float[mesh_width * mesh_height];    // 2D heightmap to create terrain
-	float *rainMap = new float[mesh_width * mesh_height]; // 2D map of precipitation values
+	int mapSize = MESH_DIM * MESH_DIM;
+	
+	float *height = (float*) calloc(mapSize, sizeof(float)); // 2D heightmap to create terrain
+	float *water = (float*)calloc(mapSize, sizeof(float)); // 2D map of precipitation values
+	float *sediment = (float*)calloc(mapSize, sizeof(float));
+
+	float *new_height = (float*)calloc(mapSize, sizeof(float));    // 2D heightmap to create terrain
+	float *new_water = (float*)calloc(mapSize, sizeof(float)); // 2D map of precipitation values
+	float *new_sediment = (float*)calloc(mapSize, sizeof(float)); // 2D map of precipitation values
+
+	float *rain = (float*)calloc(mapSize, sizeof(float));
 
 	float heightsum = 0.0f;
 	float new_heightsum = 0.0f;
 
-	for (int x = 0; x < mesh_width; x++) {
-		for (int y = 0; y < mesh_height; y++) {
-			int index = x + mesh_width * y;
+	for (int x = 0; x < MESH_DIM; x++) {
+		for (int y = 0; y < MESH_DIM; y++) {
+			int index = x + MESH_DIM * y;
 
-			cellMap[index].height = heightFunc[h_ind](x, y);
-			cellMap[index].water_height = heightFunc[h_ind](x, y);
-			cellMap[index].water_vol = 0.0f;
-			rainMap[index] = rainFunc[r_ind](x, y);
-
-			oldheightMap[index] = heightFunc[h_ind](x, y);
+			height[index] = heightFunc[h_ind](x, y);
+			rain[index] = rainFunc[r_ind](x, y);
 			heightsum += heightFunc[h_ind](x, y);
 		}
 	}
 
-	cellData* newMap = new cellData[mesh_width * mesh_height];
-	memcpy(newMap, cellMap, mesh_width * mesh_height * sizeof(cellData));
+	cellData *map = (cellData*) malloc(sizeof(cellData));
+	map->height = height;
+	map->water = water;
+	map->sediment = sediment;
 
-	initAndRunGL(argc, argv, cellMap, newMap, rainMap);
+	cellData *new_map = (cellData*)malloc(sizeof(cellData));
+	new_map->height = new_height;
+	new_map->water = new_water;
+	new_map->sediment = new_sediment;
+
+
+
+	initAndRunGL(argc, argv, map, new_map, rain);
 	//erodeCuda(cellMap, rainMap, dim, 1);
 
 	// sanity checks
-	for (int x = 0; x < mesh_width; x++) {
-		for (int y = 0; y < mesh_height; y++) {
-			int index = x + mesh_width * y;
-			new_heightsum += cellMap[index].height;
+	for (int x = 0; x < MESH_DIM; x++) {
+		for (int y = 0; y < MESH_DIM; y++) {
+			int index = x + MESH_DIM * y;
+			new_heightsum += map->height[index];
 		}
 	}
 
@@ -124,8 +125,8 @@ float toBW(int bytes, float sec) {
 }
 
 float rainCenterCircle(int x, int y) {
-	float dist = sqrt(pow(x - mesh_width / 2, 2) + pow(y - mesh_height / 2, 2));
-	if (dist < mesh_width) {
+	float dist = sqrt(pow(x - MESH_DIM / 2, 2) + pow(y - MESH_DIM / 2, 2));
+	if (dist < MESH_DIM) {
 		return 1.0;
 	}
 	else {
@@ -142,16 +143,16 @@ float rainBar(int x, int y) {
 }
 
 float conicHeight(int x, int y) {
-	float dist = sqrt(pow(x - mesh_width / 2, 2) + pow(y - mesh_height / 2, 2));
-	return 100 * (dist / (mesh_width));
+	float dist = sqrt(pow(x - MESH_DIM / 2, 2) + pow(y - MESH_DIM / 2, 2));
+	return 100 * (dist / (MESH_DIM));
 }
 
 float mountainHeight(int x, int y) {
-	float dist = sqrt(pow(x - mesh_width / 2, 2) + pow(y - mesh_height / 2, 2));
-	return 100 * (1 - dist / (mesh_width));
+	float dist = sqrt(pow(x - MESH_DIM / 2, 2) + pow(y - MESH_DIM / 2, 2));
+	return 100 * (1 - dist / (MESH_DIM));
 }
 
-float slantHeight(int x, int y) { return 100 * (mesh_height - y) / (mesh_width); }
+float slantHeight(int x, int y) { return 100 * (MESH_DIM - y) / (MESH_DIM); }
 
 float randomHeight(int x, int y) { return 100 * (1 + myNoise.GetNoise(x, y)) / 2.0f; }
 
