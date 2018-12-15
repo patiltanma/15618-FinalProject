@@ -76,18 +76,18 @@ __global__ void add_rain(float* water, float* rain, int mesh_dim) {
 
 
 __global__ void
-erode(float* height, float* water_vol, float* sediment, float* new_height, float* new_water_vol, float* new_sediment, int numCells, int globalMapDim) {
+erode(float* height, float* water_vol, float* sediment, float* new_height, float* new_water_vol, float* new_sediment, int numCells, int mesh_dim) {
 
 	//TODO: lock down block sizes and dimensioning scheme
 
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = x + globalMapDim * y;
+	int index = x + mesh_dim * y;
 
-	int left = max(0, x - 1) + y * globalMapDim;
-	int right = min(x + 1, globalMapDim - 1) + y * globalMapDim;
-	int up = x + max(0, y - 1)*globalMapDim;
-	int down = x + min(y + 1, globalMapDim - 1)*globalMapDim;
+	int left = max(0, x - 1) + y * mesh_dim;
+	int right = min(x + 1, mesh_dim - 1) + y * mesh_dim;
+	int up = x + max(0, y - 1) * mesh_dim;
+	int down = x + min(y + 1, mesh_dim - 1) * mesh_dim;
 
 	// positive values indicate outward flow
 	float4 water_vol_dir = make_float4(water_vol[left], water_vol[right], water_vol[up], water_vol[down]);
@@ -99,7 +99,7 @@ erode(float* height, float* water_vol, float* sediment, float* new_height, float
 	float cell_sediment = sediment[index];
 
 	float cell_water_height = height[index] + cell_water_vol;
-	float4 delta_h_dir = -(water_height_dir)+cell_water_height;
+	float4 delta_h_dir = -(water_height_dir) + cell_water_height;
 
 	//assume all water than can flow will AT CONSTANT SPEED
 	float4 water_flow = clamp(delta_h_dir, 0.0, 1000) / 4;
@@ -125,14 +125,14 @@ erode(float* height, float* water_vol, float* sediment, float* new_height, float
 
 	//dump sediment
 	float falloff = (DEEP_WATER - min(DEEP_WATER, cell_water_vol)) / DEEP_WATER; //maintain thin water assumption
-	float sediment_capacity = falloff * cell_water_vol*SOLUBILITY; //might want to make this a max of flow or something
+	float sediment_capacity = falloff * cell_water_vol * SOLUBILITY; //might want to make this a max of flow or something
 
 																   //velocity*steepness = material eroded cos(atan(2/abs(dH.x+dH.y)))
 	float cell_erosion = total_water_flux * ABRAISION; //could add additional effects of sediment on erosion here
 
 	float new_cell_deposition = fmaxf(0, cell_sediment + cell_erosion - sediment_capacity);
 	float new_cell_sediment = fminf(cell_sediment + cell_erosion, sediment_capacity);
-
+	 
 	float4 sediment_flux = flux_fraction * water_flux_norm*new_cell_sediment;
 
 	//account for frictional and water volume losses
@@ -143,27 +143,27 @@ erode(float* height, float* water_vol, float* sediment, float* new_height, float
 	atomicExch(&new_water_vol[index], new_cell_water_vol);
 
 	if (x>0) { // left neighbor
-		atomicAdd(&new_water_vol[x - 1 + globalMapDim * y], water_flux.x);
+		atomicAdd(&new_water_vol[x - 1 + mesh_dim * y], water_flux.x);
 		/*atomicAdd(&new_water_height[x-1+globalMapDim*y], water_flux.x);*/
-		atomicAdd(&new_sediment[x - 1 + globalMapDim * y], sediment_flux.x);
+		atomicAdd(&new_sediment[x - 1 + mesh_dim * y], sediment_flux.x);
 	}
 	/*__syncthreads();*/
-	if (x<globalMapDim - 1) { //right neighbor
-		atomicAdd(&new_water_vol[x + 1 + globalMapDim * y], water_flux.y);
+	if (x<mesh_dim - 1) { //right neighbor
+		atomicAdd(&new_water_vol[x + 1 + mesh_dim * y], water_flux.y);
 		/*atomicAdd(&new_water_height[x+1+globalMapDim*y], water_flux.y);*/
-		atomicAdd(&new_sediment[x + 1 + globalMapDim * y], sediment_flux.y);
+		atomicAdd(&new_sediment[x + 1 + mesh_dim * y], sediment_flux.y);
 	}
 	/*__syncthreads();*/
-	if (y<globalMapDim - 1) { //top neighbor
-		atomicAdd(&new_water_vol[x + globalMapDim * (y + 1)], water_flux.w);
+	if (y<mesh_dim - 1) { //top neighbor
+		atomicAdd(&new_water_vol[x + mesh_dim * (y + 1)], water_flux.w);
 		/*atomicAdd(&new_ma->water_height[x+globalMapDim*(y+1)], water_flux.w);*/
-		atomicAdd(&new_sediment[x + globalMapDim * (y + 1)], sediment_flux.w);
+		atomicAdd(&new_sediment[x + mesh_dim * (y + 1)], sediment_flux.w);
 	}
 	/*__syncthreads();*/
 	if (y>0) { // bottom neighbor
-		atomicAdd(&new_water_vol[x + globalMapDim * (y - 1)], water_flux.z);
+		atomicAdd(&new_water_vol[x + mesh_dim * (y - 1)], water_flux.z);
 		/*atomicAdd(&new_ma->water_height[x+globalMapDim*(y-1)], water_flux.z);*/
-		atomicAdd(&new_sediment[x + globalMapDim * (y - 1)], sediment_flux.z);
+		atomicAdd(&new_sediment[x + mesh_dim * (y - 1)], sediment_flux.z);
 	}
 
 	/*__syncthreads();*/
@@ -288,8 +288,6 @@ erodeCuda(struct cudaGraphicsResource **cvr_height, struct cudaGraphicsResource 
 	cudaThreadSynchronize();
 	erode <<<grid, block>>>(d_height, d_water, d_sediment, d_new_height, d_new_water, d_new_sediment, numCells, mesh_dim);
 	cudaThreadSynchronize();
-
-	
 
 	// unmap buffer object
 	checkCudaErrors(cudaGraphicsUnmapResources(1, cvr_height, 0));

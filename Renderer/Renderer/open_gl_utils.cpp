@@ -27,6 +27,7 @@ struct cudaGraphicsResource *cvr_rain;
 
 //void *d_vbo_buffer = NULL;
 float g_fAnim = 0.0;
+static bool displayWaterFlag = true;
 
 // rendering callbacks
 void display();
@@ -126,13 +127,34 @@ bool initGL(int *argc, char **argv)
 	// default initialization
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glEnable(GL_DEPTH_TEST);
+	glOrtho(-3.0, 3.0, -3.0, 3.0, -3.0, 3.0);
+
+
+	GLfloat position0[] = { 0.1, 0.1, 10.0, 0.0 };
+	GLfloat diffuse0[] = { 0.8, 0.8, 0.8, 1.0 }; 
+	GLfloat specular0[] = { 1.0, 1.0, 1.0, 1.0 }; // Is term - White
+	GLfloat ambient0[] = { 0.2, 0.2, 0.2, 1.0 }; // Ia term - Gray
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
+	glLightfv(GL_LIGHT0, GL_POSITION, position0);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse0);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, specular0);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient0);
 	glEnable(GL_NORMALIZE);
+
+	//GLfloat light_pos[] = { 0.0, 1.0, 0.0, 0.0 };
+	//glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+
 
 	// enabling glColor as it doenot work with GL_LIGHTING
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 	glEnable(GL_COLOR_MATERIAL);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glEnable(GL_POINT_SMOOTH);
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
 	// viewport
 	glViewport(0, 0, window_width, window_height);
@@ -184,7 +206,7 @@ void createVBO(GLuint *vbo, struct cudaGraphicsResource **vbo_res, unsigned int 
 	unsigned int size = MESH_DIM * MESH_DIM * sizeof(float);
 	glBufferData(GL_ARRAY_BUFFER, size, map, GL_DYNAMIC_COPY);
 	
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// register this buffer object with CUDA
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(vbo_res, *vbo, vbo_res_flags));
@@ -216,12 +238,12 @@ static unsigned int frameCount = 0;
 // mouse controls
 int mouse_old_x, mouse_old_y;
 int mouse_buttons = 0;
-float rotate_x = 0.0, rotate_y = 0.0;
+float rotate_x = 0.0, rotate_y = 0.0, rotate_z = 0.0;
 float translate_z = -3.0;
 
 void computeFPS(void);
 void drawPoints(float *data, float *water);
-void drawTriangles(float *data);
+void drawTriangles(float *data, float *water);
 void drawPointsHeightColored(float *data);
 
 extern char *sSDKsample;
@@ -247,6 +269,7 @@ void display()
 	glTranslatef(0.0, 0.0, translate_z);
 	glRotatef(rotate_x, 1.0, 0.0, 0.0);
 	glRotatef(rotate_y, 0.0, 1.0, 0.0);
+	glRotatef(rotate_z, 0.0, 0.0, 1.0);
 	//glScalef();
 
 	// render from the vbo
@@ -255,9 +278,9 @@ void display()
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_water);
 	float *water = (float *)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
 
-	drawPoints(height, water);
+	//drawPoints(height, water);
 	//drawPointsHeightColored(height);
-	//drawTriangles(data);
+	drawTriangles(height, water);
 	
 	// unmap vbo
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_height);
@@ -285,14 +308,16 @@ void drawPoints(float *data, float *water)
 			u = u * 2.0f - 1.0f;
 			v = v * 2.0f - 1.0f;
 
+			
 			if (water[xx + yy * MESH_DIM] != 0.0f)
 			{
 				//printf("%f\n", data[xx + yy * mesh_width].water_vol);
 				glColor3f(0.0, 0.0, 1.0);
 				glVertex3f(u, v, (data[xx + yy * MESH_DIM] + water[xx + yy * MESH_DIM]) / 100);
 			}
+			
 
-			glColor3f(1.0, 1.0, 0.0);
+			glColor3f(0.5f, 0.35f, 0.05f);
 			glVertex3f(u, v, data[xx + yy * MESH_DIM] / 100);
 
 			//printf("%f\n", data[xx + yy * mesh_width].height);
@@ -331,9 +356,82 @@ void drawPointsHeightColored(float *data)
 	}
 }
 
-void drawTriangles(float *data)
+void drawTriangles(float *data, float *water)
 {
-	glColor3f(0.3f, 0.9f, 0.0f);
+	/*
+	glColor3f(0.0f, 0.0f, 0.1f);
+	for (int yy = 0; yy < MESH_DIM - 1; yy++) {
+		//Makes OpenGL draw a triangle at every three consecutive vertices
+		glBegin(GL_TRIANGLE_STRIP);
+		for (int xx = 0; xx < MESH_DIM; xx++) {
+			float u = xx / (float)MESH_DIM;
+			float v = yy / (float)MESH_DIM;
+			
+			u = u * 2.0f - 1.0f;
+			v = v * 2.0f - 1.0f;
+			
+			float water_1 = water[xx + yy * MESH_DIM] / 100;
+			float water_2 = water[xx + (yy + 1) * MESH_DIM] / 100;
+			if ((water_1 * water_2) == 0.0f)
+			{
+				// fold the triangle on itself if no water
+				glVertex3f(u, v, water_1 + data[xx + yy * MESH_DIM] / 100);
+				glVertex3f(u, v, water_2 + data[xx + (yy + 1) * MESH_DIM] / 100);
+			}
+			else
+			{
+				Vec3f normal = computeNormals(xx, yy, water);
+				glNormal3f(normal[0], normal[1], normal[2]);
+				glVertex3f(u, v, water_1 + data[xx + yy * MESH_DIM] / 100);
+
+				v = (yy + 1) / (float)MESH_DIM;
+				v = v * 2.0f - 1.0f;
+				normal = computeNormals(xx, yy + 1, water);
+				glNormal3f(normal[0], normal[1], normal[2]);
+				glVertex3f(u, v, water_2 + data[xx + (yy + 1) * MESH_DIM] / 100);
+			}
+		}
+		glEnd();
+	}
+	*/
+
+	/*
+	for (int yy = 0; yy < MESH_DIM - 1; yy++) {
+		//Makes OpenGL draw a triangle at every three consecutive vertices
+		glBegin(GL_TRIANGLE_STRIP);
+		for (int xx = 0; xx < MESH_DIM; xx++) {
+			float u = xx / (float)MESH_DIM;
+			float v = yy / (float)MESH_DIM;
+
+			u = u * 2.0f - 1.0f;
+			v = v * 2.0f - 1.0f;
+
+			float water_1 = water[xx + yy * MESH_DIM] / 100;
+			float water_2 = water[xx + (yy + 1) * MESH_DIM] / 100;
+			if ((water_1 * water_2) == 0.0f)
+			{
+				//glColor4f(0.0f, 0.0f, 1.0f, -1.0f);
+			}
+			else
+			{
+				glColor4f(0.0f, 0.0f, 1.0f, 1.0f);
+			}
+			Vec3f normal = computeNormals(xx, yy, water);
+			glNormal3f(normal[0], normal[1], normal[2]);
+			glVertex3f(u, v, water_1 + data[xx + yy * MESH_DIM] / 100);
+
+			v = (yy + 1) / (float)MESH_DIM;
+			v = v * 2.0f - 1.0f;
+			normal = computeNormals(xx, yy + 1, water);
+			glNormal3f(normal[0], normal[1], normal[2]);
+			glVertex3f(u, v, water_2 + data[xx + (yy + 1) * MESH_DIM] / 100);
+		}
+		glEnd();
+	}
+	*/
+	
+	
+	glColor3f(0.5f, 0.35f, 0.05f);
 	for (int yy = 0; yy < MESH_DIM - 1; yy++) {
 		//Makes OpenGL draw a triangle at every three consecutive vertices
 		glBegin(GL_TRIANGLE_STRIP);
@@ -354,6 +452,30 @@ void drawTriangles(float *data)
 			glVertex3f(u, v, data[xx + (yy + 1) * MESH_DIM] / 100);
 		}
 		glEnd();
+	}
+
+	if (displayWaterFlag)
+	{
+		glPointSize(3);
+		glColor3f(0.0, 0.0, 1.0);
+		for (int yy = 0; yy < MESH_DIM - 1; yy++) {
+			//Makes OpenGL draw a triangle at every three consecutive vertices
+			glBegin(GL_POINTS);
+			for (int xx = 0; xx < MESH_DIM - 1; xx++) {
+
+				float u = xx / (float)MESH_DIM;
+				float v = yy / (float)MESH_DIM;
+				u = u * 2.0f - 1.0f;
+				v = v * 2.0f - 1.0f;
+
+				if (water[xx + yy * MESH_DIM] != 0.0f)
+				{
+					glVertex3f(u, v, (data[xx + yy * MESH_DIM] + water[xx + yy * MESH_DIM]) / 100);
+				}
+				//printf("%f\n", data[xx + yy * mesh_width].height);
+			}
+			glEnd();
+		}
 	}
 }
 
@@ -468,13 +590,26 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 {
 	switch (key)
 	{
-	case (27):
+		case (27):
 #if defined(__APPLE__) || defined(MACOSX)
-		exit(EXIT_SUCCESS);
+			exit(EXIT_SUCCESS);
 #else
-		glutDestroyWindow(glutGetWindow());
-		return;
+			glutDestroyWindow(glutGetWindow());
+			return;
 #endif
+		case ('u'):
+			rotate_z += 0.8f;
+			return;
+
+		case ('w'):
+			if (displayWaterFlag)
+			{
+				displayWaterFlag = false;
+			}
+			else
+			{
+				displayWaterFlag = true;
+			}
 	}
 }
 

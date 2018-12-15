@@ -2,7 +2,7 @@
 
 //simulation constants
 #define G         10.0
-#define WATER_LOSS .98
+#define WATER_LOSS .01
 #define DEEP_WATER 10.0
 #define VEL_LOSS   0.9
 #define SOLUBILITY 1.0

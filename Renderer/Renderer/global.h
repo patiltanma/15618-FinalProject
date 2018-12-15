@@ -52,4 +52,4 @@
 #define REFRESH_DELAY     10 //ms
 
 // mesh display constants
-#define MESH_DIM 1024
+#define MESH_DIM 256

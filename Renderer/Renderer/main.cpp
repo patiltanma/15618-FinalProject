@@ -62,8 +62,8 @@ int main(int argc, char **argv)
 
 	myNoise.SetNoiseType(FastNoise::SimplexFractal); // Set the desired noise type
 
-	int h_ind = 2;
-	int r_ind = 0;
+	int h_ind = 1;
+	int r_ind = 1;
 
 	int mapSize = MESH_DIM * MESH_DIM;
 	
@@ -127,7 +127,7 @@ float toBW(int bytes, float sec) {
 
 float rainCenterCircle(int x, int y) {
 	float dist = sqrt(pow(x - MESH_DIM / 2, 2) + pow(y - MESH_DIM / 2, 2));
-	if (dist < MESH_DIM) {
+	if (dist < 10) {
 		return 1.0;
 	}
 	else {
@@ -136,7 +136,7 @@ float rainCenterCircle(int x, int y) {
 }
 
 float rainBar(int x, int y) {
-	if (y == 4) {
+	if (y == MESH_DIM - 4) {
 		return 1.0;
 	}
 	else
