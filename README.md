@@ -98,7 +98,7 @@ The machine used to test the algorithm was a Geforce GTX 1050, which has only 2G
 Heavy use of the Nvidia Visual Profiler was made during the development of this algorithm. It has consistently indicated throughout development that the largest bottleneck to improved performance is instruction latency.
 
 <p align="center">
-<img src="Renderer/docs/img_5_2_1.png">
+<img src="/Renderer/docs/img_5_2_1.png">
 </p>
 
 The “other” category in a compute capability 6.X device indicates that the algorithm spends most of its time waiting on branch divergence or register overflows. Branch divergence is significantly more likely.
