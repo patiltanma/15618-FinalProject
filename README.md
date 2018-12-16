@@ -88,8 +88,9 @@ We ran the algorithm at a number of grid sizes and timed how long it took to per
 The machine used to test the algorithm was a Geforce GTX 1050, which has only 2GB of RAM. Attempts to run on grid sizes larger than 4096 ran into memory allocation errors.
 
 <p align="center">
-![useful image](Renderer/docs/img_5_1_1.png)
-![useful image](Renderer/docs/img_5_1_2.png)
+![](Renderer/docs/img_5_1_1.png)
+  
+![](Renderer/docs/img_5_1_2.png)
 </p>
 
 
