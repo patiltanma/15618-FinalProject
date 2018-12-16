@@ -5,9 +5,10 @@ We implemented a hydraulic erosion model for procedural terrain generation to pr
 - We implemented 3 key parallel approaches and have presented their results.
 - Capable of operating on continuously scrolling terrain instead of a fixed heightmap on NVIDIA GTX 1050.
 
-<p align="center">
 ![](Renderer/docs/img_4_4.PNG)
-</p>
+
+<img align="center" src="Renderer/docs/img_4_4.PNG">
+
 
 You can download the PDF of this report [here](Renderer/docs/15618_Project_Report.pdf).
 
