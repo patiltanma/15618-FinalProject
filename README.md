@@ -107,6 +107,7 @@ Images below are rendered with the following erosion constants:
 - ABRASION: 0.1f
 
 <p align="center">
+  
   <img src="Renderer/docs/img_4_2.PNG">
   Initial Concial Height Map With Rain
   
@@ -130,8 +131,10 @@ Images below are rendered with the following erosion constants:
 If the constants EVAPORATION and ABRASION are increased by a factor of 10, a realistic train can be generated with just 100 iterations.
 
 <p align="center">
+  
   <img src="Renderer/docs/img_4_10.PNG">
   Random Height Map after just 100 Iterations
+  
 </p>
 
 ---
