@@ -3,7 +3,7 @@
 We implemented a hydraulic erosion model for procedural terrain generation to produce more natural looking landscapes in real time.
 - Computed a 1024x1024 heightmap in no more than 2ms per cycle.
 - We implemented 3 key parallel approaches and have presented their results.
-- Capable of operating on continuously scrolling terrain instead of a fixed heightmap on NVIDIA GTX 1050.
+- NVIDIA GTX 1050.
 
 <p align="center">
 <img align="center" src="Renderer/docs/img_4_4.PNG">
