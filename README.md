@@ -5,6 +5,10 @@ We implemented a hydraulic erosion model for procedural terrain generation to pr
 - We implemented 3 key parallel approaches and have presented their results.
 - Capable of operating on continuously scrolling terrain instead of a fixed heightmap on NVIDIA GTX 1050.
 
+<p align="center">
+<img src="/Renderer/docs/img_4_4.PNG">
+</p>
+
 ---
 
 ## BACKGROUND
@@ -56,7 +60,9 @@ We maintain separate input and output buffers for each iteration, so in practice
 Each CUDA block is mapped to a contiguous square portion of the input heightmap. Because the algorithm relies on each cell accessing lots of information about its neighbor (each value is accessed approximately five times), significant gains can be made by loading those frequently shared data into shared memory. 
 This is very easy to do for all of the actual data in a block, but the edges of a block require information from other blocks. For the sake of simplicity in writing other portions of the code, for each simulation parameter, we define an array in shared memory that is BLOCKDIM+2 wide and tall, allowing us to store those edge values in shared memory as well, despite the fact that each is only used by one cell. The “corner” values of this larger array are never accessed or populated. A depiction of this array is shown below.  
 
-[image]
+<p align="center">
+<img src="/Renderer/docs/img_3_2_1.PNG">
+</p>
 
 Cell height, water volume, sediment volume, and expected outflow are all loaded in this fashion. 
 
@@ -88,11 +94,9 @@ We ran the algorithm at a number of grid sizes and timed how long it took to per
 The machine used to test the algorithm was a Geforce GTX 1050, which has only 2GB of RAM. Attempts to run on grid sizes larger than 4096 ran into memory allocation errors.
 
 <p align="center">
-![](Renderer/docs/img_5_1_1.png)
-  
-![](Renderer/docs/img_5_1_2.png)
+<img src="/Renderer/docs/img_5_1_1.PNG">
+<img src="/Renderer/docs/img_5_1_2.PNG">
 </p>
-
 
 ### Profiling Results
 Heavy use of the Nvidia Visual Profiler was made during the development of this algorithm. It has consistently indicated throughout development that the largest bottleneck to improved performance is instruction latency.
