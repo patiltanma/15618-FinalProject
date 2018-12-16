@@ -90,6 +90,10 @@ The machine used to test the algorithm was a Geforce GTX 1050, which has only 2G
 ![useful image]({{ site.url }}/Renderer/docs/img_5_1_1.png)
 ![useful image]({{ site.url }}/Renderer/docs/img_5_1_2.png)
 
+<p align="center">
+  <img width="460" height="300" src="https://github.com/patiltanma/15618-FinalProject/blob/master/Renderer/docs/img_3_2_1.PNG">
+</p>
+
 ### Profiling Results
 Heavy use of the Nvidia Visual Profiler was made during the development of this algorithm. It has consistently indicated throughout development that the largest bottleneck to improved performance is instruction latency.
 
