@@ -5,8 +5,6 @@ We implemented a hydraulic erosion model for procedural terrain generation to pr
 - We implemented 3 key parallel approaches and have presented their results.
 - Capable of operating on continuously scrolling terrain instead of a fixed heightmap on NVIDIA GTX 1050.
 
-![](Renderer/docs/img_4_4.PNG)
-
 <p align="center">
 <img align="center" src="Renderer/docs/img_4_4.PNG">
 </p>
@@ -65,7 +63,7 @@ Each CUDA block is mapped to a contiguous square portion of the input heightmap.
 This is very easy to do for all of the actual data in a block, but the edges of a block require information from other blocks. For the sake of simplicity in writing other portions of the code, for each simulation parameter, we define an array in shared memory that is BLOCKDIM+2 wide and tall, allowing us to store those edge values in shared memory as well, despite the fact that each is only used by one cell. The “corner” values of this larger array are never accessed or populated. A depiction of this array is shown below.  
 
 <p align="center">
-<img src="/Renderer/docs/img_3_2_1.PNG">
+<img src="Renderer/docs/img_3_2_1.PNG">
 </p>
 
 Cell height, water volume, sediment volume, and expected outflow are all loaded in this fashion. 
@@ -98,15 +96,15 @@ We ran the algorithm at a number of grid sizes and timed how long it took to per
 The machine used to test the algorithm was a Geforce GTX 1050, which has only 2GB of RAM. Attempts to run on grid sizes larger than 4096 ran into memory allocation errors.
 
 <p align="center">
-<img src="/Renderer/docs/img_5_1_1.PNG">
-<img src="/Renderer/docs/img_5_1_2.PNG">
+<img src="Renderer/docs/img_5_1_1.PNG">
+<img src="Renderer/docs/img_5_1_2.PNG">
 </p>
 
 ### Profiling Results
 Heavy use of the Nvidia Visual Profiler was made during the development of this algorithm. It has consistently indicated throughout development that the largest bottleneck to improved performance is instruction latency.
 
 <p align="center">
-<img src="/Renderer/docs/img_5_2_1.PNG">
+<img src="Renderer/docs/img_5_2_1.PNG">
 </p>
 
 The “other” category in a compute capability 6.X device indicates that the algorithm spends most of its time waiting on branch divergence or register overflows. Branch divergence is significantly more likely.
@@ -123,49 +121,11 @@ In addition, the grids loaded in shared memory are larger than a block, so numer
 
 ---
 
----
+## Project Code
+- Used Visual Studio 2017
+- Cuda 9.0
+- Glew and Glut Libraries for OpenGL
 
-## GOALS AND DELIVERABLES
-
-### Goals
-- Render a 1024x1024 heightmap in no more than 5ms per cycle
-- Capable of operating on continuously scrolling terrain instead of a fixed heightmap
-- Multiple terrain materials with different erosion mechanics
-- Persistent rivers/bodies of water
-
-### Stretch Goals
-- Non-hydraulic erosion methods
-- Voxel-based erosion instead of heightmap erosion
-
-### Deliverables
-- Working CUDA code and loading-unloading program
-- Documentation in the form of a Report.
-
-
-
-## PLATFORM CHOICE
-We plan to make this project usable for video games and so will be using some ubiquitous NVIDIA hardware that is available to us. The specifics are:
-- GeForce® GTX 1080 Ti 
-- GeForce® GTX 1050 Ti 
-
----
-
-## POSTER SESSION
-Poster demonstrating the algorithm implemented and a live demo on one of our laptops showing the algorithm in process and iteration times. 
-
----
-
-## SCHEDULE
-
-| Description | Date |
-| --- | --- |
-| Determine algorithms for base heightmap generation, height map rendering environment. | Nov 05, 2018 |
-| Implement basic height map generation algorithm. Design algorithm for hydraulic erosion. | Nov 12, 2018 |
-| Begin implementation of an algorithm for hydraulic erosion. | Nov 19, 2018 |
-| Finish implementation of the algorithm. | Nov 26, 2018 |
-| Debug and optimize. Consider adding new features. | Dec 2, 2018 |
-| Debug and optimize. Consider creating an interactive demonstration. | Dec 9, 2018 |
-| Write the final report and prepare for the presentation. | Dec 16, 2018 |
 
 ---
 
