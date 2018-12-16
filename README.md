@@ -107,23 +107,23 @@ Images below are rendered with the following erosion constants:
 - ABRASION: 0.1f
 
 <p align="center">
-<img src="Renderer/docs/img_4_2.PNG">
-Initial Concial Height Map With Rain
+<img src="Renderer/docs/img_4_2.PNG"><br>
+Initial Concial Height Map With Rain<br>
   
-<img src="Renderer/docs/img_4_3.PNG">
-Conical Heigh after 1000 Iterations of Rain
+<img src="Renderer/docs/img_4_3.PNG"><br>
+Conical Heigh after 1000 Iterations of Rain<br>
   
-<img src="Renderer/docs/img_4_5.PNG">
-Initial Rangom Height Map
+<img src="Renderer/docs/img_4_5.PNG"><br>
+Initial Rangom Height Map<br>
   
-<img src="Renderer/docs/img_4_6.PNG">
-Initial Rangom Height Map rendered with Rain
+<img src="Renderer/docs/img_4_6.PNG"><br>
+Initial Rangom Height Map rendered with Rain<br>
   
-<img src="Renderer/docs/img_4_7.PNG">
-Random Height Map after 1000 Iterations of Rain
+<img src="Renderer/docs/img_4_7.PNG"><br>
+Random Height Map after 1000 Iterations of Rain<br>
   
-<img src="Renderer/docs/img_4_8.PNG">
-Random Height Map after 2000 Iterations of Rain   
+<img src="Renderer/docs/img_4_8.PNG"><br>
+Random Height Map after 2000 Iterations of Rain<br>
 </p>
 
 If the constants EVAPORATION and ABRASION are increased by a factor of 10, a realistic train can be generated with just 100 iterations.
