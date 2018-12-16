@@ -27,7 +27,7 @@ struct cudaGraphicsResource *cvr_rain;
 
 //void *d_vbo_buffer = NULL;
 float g_fAnim = 0.0;
-static bool displayWaterFlag = true;
+
 
 // rendering callbacks
 void display();
@@ -43,6 +43,7 @@ void createVBO(GLuint *vbo, struct cudaGraphicsResource **vbo_res, unsigned int 
 void deleteVBO(GLuint *vbo, struct cudaGraphicsResource *vbo_res);
 
 Vec3f computeNormals(int x, int y, float* h);
+void print(float x, float y, char *string);
 
 ////////////////////////////////////////////////////////////////////////////////
 //! initialise and run openGL
@@ -248,12 +249,30 @@ void drawPointsHeightColored(float *data);
 
 extern char *sSDKsample;
 
+
+// keyboard control varibles
+static int iterations = 0;
+static bool displayWaterFlag = true;
+static bool pauseFlag = false;
+
 ////////////////////////////////////////////////////////////////////////////////
 //! Display callback
 ////////////////////////////////////////////////////////////////////////////////
 void display()
 {
+	if (pauseFlag) { return; }
+
+	if (iterations > ITERATIONS)
+	{
+		print(0.1f, 0.1f,"Press 'p' to resume to further iteration.");
+		return;
+	}
+	iterations++;
+
 	sdkStartTimer(&timer);
+	
+
+	
 
 	// run CUDA kernel to generate vertex positions
 	//runCuda(&cuda_vbo_resource, mesh_width, mesh_height, g_fAnim);
@@ -290,6 +309,8 @@ void display()
 
 	glutSwapBuffers();
 
+
+	
 	g_fAnim += 0.01f;
 
 	sdkStopTimer(&timer);
@@ -602,14 +623,18 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 			return;
 
 		case ('w'):
-			if (displayWaterFlag)
-			{
-				displayWaterFlag = false;
-			}
-			else
-			{
-				displayWaterFlag = true;
-			}
+			if (displayWaterFlag) { displayWaterFlag = false;}
+			else { displayWaterFlag = true;}
+			return;
+
+		case ('r'):
+			iterations = 0;
+			return;
+
+		case ('p'):
+			if (pauseFlag) { pauseFlag = false; }
+			else { pauseFlag = true; }
+			return;
 	}
 }
 
@@ -677,4 +702,20 @@ void computeFPS(void)
 	sprintf(fps, "Cuda GL Interop (VBO): %3.1f fps (Max 100Hz)", avgFPS);
 	glutSetWindowTitle(fps);
 }
+
+
+void print(float x, float y, char *string)
+{
+	glColor3f(1.0f, 1.0f, 1.0f);
+	//set the position of the text in the window using the x and y coordinates
+	glRasterPos2f(x, y);
+	//get the length of the string to display
+	int len = (int)strlen(string);
+
+	//loop to display character by character
+	for (int i = 0; i < len; i++)
+	{
+		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, string[i]);
+	}
+};
 

@@ -51,5 +51,7 @@
 #define THRESHOLD          0.30f
 #define REFRESH_DELAY     10 //ms
 
+
+
 // mesh display constants
-#define MESH_DIM 256
+#define MESH_DIM 512

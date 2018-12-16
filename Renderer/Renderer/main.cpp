@@ -37,6 +37,7 @@ float conicHeight(int x, int y);
 float mountainHeight(int x, int y);
 float slantHeight(int x, int y);
 float randomHeight(int x, int y);
+float rainWholeGrid(int x, int y);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -55,15 +56,17 @@ int main(int argc, char **argv)
 	heightFunc[1] = mountainHeight;
 	heightFunc[2] = conicHeight;
 	heightFunc[3] = slantHeight;
+	
 
 	float(*rainFunc[2])(int x, int y);
 	rainFunc[0] = rainBar;
 	rainFunc[1] = rainCenterCircle;
+	rainFunc[2] = rainWholeGrid;
 
 	myNoise.SetNoiseType(FastNoise::SimplexFractal); // Set the desired noise type
 
-	int h_ind = 1;
-	int r_ind = 1;
+	int h_ind = 0;
+	int r_ind = 0;
 
 	int mapSize = MESH_DIM * MESH_DIM;
 	
@@ -101,8 +104,6 @@ int main(int argc, char **argv)
 	new_map->water = new_water;
 	new_map->sediment = new_sediment;
 
-
-
 	initAndRunGL(argc, argv, map, new_map, rain);
 	//erodeCuda(cellMap, rainMap, dim, 1);
 
@@ -135,8 +136,14 @@ float rainCenterCircle(int x, int y) {
 	}
 }
 
+float rainWholeGrid(int x, int y) {
+
+	return 0.5f;
+
+}
+
 float rainBar(int x, int y) {
-	if (y == MESH_DIM - 4) {
+	if (y == 0) {
 		return 1.0;
 	}
 	else

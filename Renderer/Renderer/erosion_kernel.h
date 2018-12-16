@@ -2,15 +2,17 @@
 
 //simulation constants
 #define G         10.0
-#define WATER_LOSS .01
+#define WATER_LOSS 0.5f //.05
 #define DEEP_WATER 10.0
 #define VEL_LOSS   0.9
-#define SOLUBILITY 1.0
-#define ABRAISION  .01
+#define SOLUBILITY 1.0f //1.0
+#define ABRAISION  0.1f //.01
 
+#define ITERATIONS 100
 
 // block size
 #define BLOCKDIM 32
+#define BLOCKSIZE 32
 
 //#define MAX(a,b) ((a > b) ? a : b)
 
