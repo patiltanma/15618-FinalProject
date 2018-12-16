@@ -88,6 +88,54 @@ We started with implementing a simple approach were the water levels of the neig
 
 ---
 
+## APPROACH
+We used OpenGL to render the graphics for the displaying the generated terrain. We have added a mouse and keyboard inputs along with a timer callbacks, which allow controlling the camera position. Also using the keyboard displaying water or terrain color based on height can also be controlled. For rendering, we used tesselation using triangle_Strip for terrain and points for displaying rainwater with normal ambient lighting along with a point light source. We did not implement texture and other components of the Graphic Pipeline as our prime focus was to optimise terrain generation rather than terrain rendering.
+
+We experimented with basic 3 terrains:
+- Mountain height map
+- Conical height map
+- Random height map (Simplex fractal)
+
+And 3 rain models:
+- Complete grid-wide rain
+- Circular centre rain
+- Rain strip
+
+Images below are rendered with the following erosion constants: 
+- EVAPORATION: 0.5f
+- SOLUBILITY: 1.0f
+- ABRASION: 0.1f
+
+<p align="center">
+  <img src="Renderer/docs/img_4_2.PNG">
+  Initial Concial Height Map With Rain
+  
+  <img src="Renderer/docs/img_4_3.PNG">
+  Conical Heigh after 1000 Iterations of Rain
+  
+  <img src="Renderer/docs/img_4_5.PNG">
+  Initial Rangom Height Map
+  
+  <img src="Renderer/docs/img_4_6.PNG">
+  Initial Rangom Height Map rendered with Rain
+  
+  <img src="Renderer/docs/img_4_7.PNG">
+  Random Height Map after 1000 Iterations of Rain
+  
+  <img src="Renderer/docs/img_4_8.PNG">
+  Random Height Map after 2000 Iterations of Rain
+   
+</p>
+
+If the constants EVAPORATION and ABRASION are increased by a factor of 10, a realistic train can be generated with just 100 iterations.
+
+<p align="center">
+  <img src="Renderer/docs/img_4_10.PNG">
+  Random Height Map after just 100 Iterations
+</p>
+
+---
+
 ## RESULTS
 
 ### Computation Time
