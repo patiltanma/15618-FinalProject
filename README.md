@@ -11,6 +11,8 @@ We implemented a hydraulic erosion model for procedural terrain generation to pr
 <img src="/Renderer/docs/img_4_4.PNG">
 </p>
 
+You can download the PDF of this report [here]("/Renderer/docs/15618_Project_Report.pdf).
+
 ---
 
 ## BACKGROUND
