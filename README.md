@@ -109,21 +109,27 @@ Images below are rendered with the following erosion constants:
 <p align="center">
   
   <img src="Renderer/docs/img_4_2.PNG">
+  
   Initial Concial Height Map With Rain
   
   <img src="Renderer/docs/img_4_3.PNG">
+  
   Conical Heigh after 1000 Iterations of Rain
   
   <img src="Renderer/docs/img_4_5.PNG">
+  
   Initial Rangom Height Map
   
   <img src="Renderer/docs/img_4_6.PNG">
+  
   Initial Rangom Height Map rendered with Rain
   
   <img src="Renderer/docs/img_4_7.PNG">
+  
   Random Height Map after 1000 Iterations of Rain
   
   <img src="Renderer/docs/img_4_8.PNG">
+  
   Random Height Map after 2000 Iterations of Rain
    
 </p>
