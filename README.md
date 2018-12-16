@@ -86,12 +86,14 @@ We started with implementing a simple approach were the water levels of the neig
 We ran the algorithm at a number of grid sizes and timed how long it took to perform 10 iterations of the algorithm. The charts below presents the time in milliseconds it took to run a single erosion step at various sizes. In general, time to compute increased linearly with the number of cells being evaluated.
 
 The machine used to test the algorithm was a Geforce GTX 1050, which has only 2GB of RAM. Attempts to run on grid sizes larger than 4096 ran into memory allocation errors.
-[Image 1]
-[Image 2]
+![useful image]({{ site.url }}/docs/img_5_1_1.png)
+![useful image]({{ site.url }}/docs/img_5_1_2.png)
 
 ### Profiling Results
 Heavy use of the Nvidia Visual Profiler was made during the development of this algorithm. It has consistently indicated throughout development that the largest bottleneck to improved performance is instruction latency.
-[Image 3]
+
+![useful image]({{ site.url }}/docs/img_5_2_1.png)
+
 The “other” category in a compute capability 6.X device indicates that the algorithm spends most of its time waiting on branch divergence or register overflows. Branch divergence is significantly more likely.
 The mathematical portion of the algorithm encounters several areas where division by zero occurs when there is no water in a cell. Checking for that creates high rates of divergence when a block contains a boundary between a watery area and a dry area. In addition, the algorithm relies heavily on min and max functions to keep certain values (mostly water volume) at or above zero. This presumably creates a large number of conditionals that will evaluate differently for different threads. 
 In addition, the grids loaded in shared memory are larger than a block, so numerous conditionals are used to fill in the additional areas and these are possibly not well warp-aligned. 
