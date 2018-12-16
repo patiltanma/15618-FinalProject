@@ -97,7 +97,9 @@ The machine used to test the algorithm was a Geforce GTX 1050, which has only 2G
 ### Profiling Results
 Heavy use of the Nvidia Visual Profiler was made during the development of this algorithm. It has consistently indicated throughout development that the largest bottleneck to improved performance is instruction latency.
 
-![useful image]({{ site.url }}/docs/img_5_2_1.png)
+<p align="center">
+<img src="Renderer/docs/img_5_2_1.png">
+</p>
 
 The “other” category in a compute capability 6.X device indicates that the algorithm spends most of its time waiting on branch divergence or register overflows. Branch divergence is significantly more likely.
 The mathematical portion of the algorithm encounters several areas where division by zero occurs when there is no water in a cell. Checking for that creates high rates of divergence when a block contains a boundary between a watery area and a dry area. In addition, the algorithm relies heavily on min and max functions to keep certain values (mostly water volume) at or above zero. This presumably creates a large number of conditionals that will evaluate differently for different threads. 
